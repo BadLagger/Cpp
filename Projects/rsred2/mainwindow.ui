@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>654</width>
+    <height>232</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>RsRed2</string>
+  </property>
+  <widget class="QWidget" name="centralWidget">
+   <widget class="QPushButton" name="pushButton">
+    <property name="geometry">
+     <rect>
+      <x>560</x>
+      <y>20</y>
+      <width>81</width>
+      <height>51</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Connect</string>
+    </property>
+   </widget>
+   <widget class="QTextEdit" name="textEdit">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>80</y>
+      <width>631</width>
+      <height>64</height>
+     </rect>
+    </property>
+   </widget>
+   <widget class="QTextEdit" name="textEdit_2">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>160</y>
+      <width>631</width>
+      <height>61</height>
+     </rect>
+    </property>
+   </widget>
+   <widget class="QWidget" name="layoutWidget">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>20</y>
+      <width>511</width>
+      <height>22</height>
+     </rect>
+    </property>
+    <layout class="QHBoxLayout" name="horizontalLayout">
+     <item>
+      <widget class="QLabel" name="label">
+       <property name="text">
+        <string>Port 1</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QComboBox" name="P1Cbox"/>
+     </item>
+     <item>
+      <widget class="QComboBox" name="P1SpeedCbox"/>
+     </item>
+     <item>
+      <widget class="QComboBox" name="P1ParityCbox"/>
+     </item>
+     <item>
+      <widget class="QComboBox" name="P1BitCbox"/>
+     </item>
+     <item>
+      <widget class="QComboBox" name="P1StopCbox"/>
+     </item>
+     <item>
+      <widget class="QComboBox" name="P1FlowCtrlCbox"/>
+     </item>
+    </layout>
+   </widget>
+   <widget class="QWidget" name="layoutWidget">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>50</y>
+      <width>511</width>
+      <height>22</height>
+     </rect>
+    </property>
+    <layout class="QHBoxLayout" name="horizontalLayout_2">
+     <item>
+      <widget class="QLabel" name="label_2">
+       <property name="text">
+        <string>Port 2</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QComboBox" name="P2Cbox"/>
+     </item>
+     <item>
+      <widget class="QComboBox" name="P2SpeedCbox"/>
+     </item>
+     <item>
+      <widget class="QComboBox" name="P2ParityCbox"/>
+     </item>
+     <item>
+      <widget class="QComboBox" name="P2BitCbox"/>
+     </item>
+     <item>
+      <widget class="QComboBox" name="P2StopCbox"/>
+     </item>
+     <item>
+      <widget class="QComboBox" name="P2FlowCtrlCbox"/>
+     </item>
+    </layout>
+   </widget>
+  </widget>
+ </widget>
+ <layoutdefault spacing="6" margin="11"/>
+ <resources/>
+ <connections/>
+</ui>
