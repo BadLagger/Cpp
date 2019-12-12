@@ -15,11 +15,6 @@
 class ComPort : public QSerialPort
 {
     Q_OBJECT
-
-    QTimer                   *portUpdateTimer;  //! Таймер для обновления списка портов в комбобоксе
-    //QSerialPort::DataBits    dataBits;          //! Текущая настройка длинны слова порта (битность)
-    //QSerialPort::FlowControl flowControl;       //! Текущая настройка усправления потоком порта
-
     /* Открытые методы */
 public:
    /*!
@@ -79,16 +74,14 @@ signals:
 
     /* Закрытые методы */
 private:
-    QComboBox *portlist;     //! Комбобокс списка порта
-    QComboBox *speed;        //! Комбобокс списка скоростей
-    QComboBox *paritylist;   //! Комбобокс списка чётности
-    QComboBox *bitlist;      //! Комбобокс списка битности
-    QComboBox *stoplist;      //! Комбобокс списка стопбитов
-    QComboBox *flowlist;      //! Комбобокс списка управления потоком
-
+    QTimer    *portUpdateTimer;  //! Таймер для обновления списка портов в комбобоксе
+    QComboBox *portlist;         //! Комбобокс списка порта
+    QComboBox *speed;            //! Комбобокс списка скоростей
+    QComboBox *paritylist;       //! Комбобокс списка чётности
+    QComboBox *bitlist;          //! Комбобокс списка битности
+    QComboBox *stoplist;         //! Комбобокс списка стопбитов
+    QComboBox *flowlist;         //! Комбобокс списка управления потоком
     QList<QSerialPortInfo>   portList;          //! Список портов отображаемых в комбобоксе
-    /*int                      baudRate;          //! Текущая настройка скорости порта
-    QSerialPort::Parity      parity;            //! Текущая настройка чет/нечет порта*/
     /*!
      * \brief  Попытка установить подключение (Закрытый метод)
     ***********************************************************************************/
