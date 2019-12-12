@@ -7,6 +7,11 @@
 #include <QtSerialPort/QSerialPortInfo>
 #include <QSerialPort>
 
+/* Описание класса */
+/*!
+ * \brief  Класс-адаптер для предоставления интерфейса взаимодействия
+ *         COM-порта и интерфейса пользователя
+ ***********************************************************************************/
 class ComPort : public QSerialPort
 {
     Q_OBJECT

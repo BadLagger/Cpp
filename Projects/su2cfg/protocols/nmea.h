@@ -4,7 +4,7 @@
 #include <QObject>
 #include <QTimer>
 #include "nmeabase.h"
-#include "comport.h"
+#include "customs/comport.h"
 
 typedef enum
 {

@@ -5,62 +5,24 @@
 #include <QTimer>
 #include <QThread>
 #include <QLabel>
-#include "comport.h"
-#include "bcp2.h"
-#include "nmea.h"
-#include "cbytearraytextedit.h"
-#include "modecfg.h"
-#include "masterslavewidget.h"
-#include "baseswidget.h"
+#include "protocols/bcp2.h"
+#include "protocols/nmea.h"
+#include "customs/comport.h"
+#include "customs/cbytearraytextedit.h"
+#include "customs/modecfg.h"
+#include "customs/masterslavewidget.h"
+#include "customs/baseswidget.h"
+#include "windows/infowindow.h"
+#include "windows/basesmanualwindow.h"
 
 namespace Ui {
 class MainWindow;
 }
 
 //! \brief Максимальный размер таблицы с настройками портов для перебора скоростей
-#define MAX_PORT_SPEED_TAB_SIZE 28
+#define MAX_PORT_SPEED_TAB_SIZE 30
 //! \brief Количество повторных запросов при переборе скоростей
 #define SEEK_CONN_ATEMPTS_MAX 3
-
-//! \brief Список протоклов для таблицы настроек портов
-typedef enum
-{
-    WmPortProtocolTypes_BCP2 = 0,
-    WmPortProtocolTypes_NMEA,
-    WmPortProtocolTypes_Max
-}WmPortProtocolTypes;
-//! \brief Структура элемента таблицы настроек портов
-typedef struct
-{
-    unsigned long       speed;
-    WmPortProtocolTypes protocol;
-}WMPORTSETS, *WMPORTSETSptr;
-//! \brief Вспомогательная структура для объединения лейблов портов
-//! \remark Возможно стоит включить в класс ComPort или в какой-то производный от него класс
-typedef struct
-{
-    QLabel *speed;
-    QLabel *protocol;
-}WMPORTLABEL, *WMPORTLABELptr;
-
-//! \brief Вспомогательная структура для объединения комбобоксов портов
-//! \remark Возможно стоит включить в класс ComPort или в какой-то производный от него класс
-typedef struct
-{
-    QComboBox *speed;
-    QComboBox *protocol;
-}WMPORTCBOX, *WMPORTCBOXptr;
-
-//! \brief Вспомогательная структура для управления портом (визуализация + обработка)
-//! \remark Возможно стоит включить в класс ComPort или в какой-то производный от него класс
-typedef struct
-{
-   QString     name;
-   Bcp2::Ports bcp2Id;
-   NmeaPortIds nmeaId;
-   WMPORTLABEL label;
-   WMPORTCBOX  cbox;
-}MWPORTELEMET, *MWPORTELEMETptr;
 
 /* Описание класса */
 /*!
@@ -69,7 +31,61 @@ typedef struct
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
+public:
+    /* Открытые структуры и списки */
+    //! \brief Список протоклов для таблицы настроек портов
+    typedef enum
+    {
+        ProtocolType_BCP2 = 0,
+        ProtocolType_NMEA,
+        ProtocolType_Max
+    }ProtocolTypes;
+    //! \brief Структура элемента таблицы настроек портов
+    typedef struct
+    {
+        unsigned long             speed;
+        MainWindow::ProtocolTypes protocol;
+    }PORTSETS, *PORTSETSptr;
+    /* Открытые методы */
+   /*!
+    * \brief     Конструктор класса MainWindow
+    * \remark    Основные связи элементов ГУИ и логики приложения находятся здесь
+    * \param[in] указатель на родительский виджет
+    ***********************************************************************************/
+    explicit MainWindow(QWidget *parent = nullptr);
+    /*!
+     * \brief     Деструктор класса MainWindow
+     ***********************************************************************************/
+    ~MainWindow();
 
+private:
+    /* Закрытые структуры и списки */
+    //! \brief  Вспомогательная структура для объединения лейблов портов
+    //! \remark Возможно стоит включить в класс ComPort или в какой-то производный от него класс
+    typedef struct
+    {
+        QLabel *speed;
+        QLabel *protocol;
+    }PORTLABEL, *PORTLABELptr;
+    //! \brief Вспомогательная структура для объединения комбобоксов портов
+    //! \remark Возможно стоит включить в класс ComPort или в какой-то производный от него класс
+    typedef struct
+    {
+        QComboBox *speed;
+        QComboBox *protocol;
+    }PORTCBOX, *PORTCBOXptr;
+    //! \brief Вспомогательная структура для управления портом (визуализация + обработка)
+    //! \remark Возможно стоит включить в класс ComPort или в какой-то производный от него класс
+    //!
+    typedef struct
+    {
+       QString                 name;
+       Bcp2::Ports             bcp2Id;
+       NmeaPortIds             nmeaId;
+       MainWindow::PORTLABEL   label;
+       MainWindow::PORTCBOX    cbox;
+    }PORTELEMET, *PORTELEMETptr;
+    /* Закрытые члены */
     Ui::MainWindow     *ui;                //! Указатель на класс ГУИ
     QTimer             *seekConnTimer;     //! Таймер для перебора скоростей
     QTimer             *dbgPrintTimer;     //! Таймер для вывода дебага
@@ -81,62 +97,24 @@ class MainWindow : public QMainWindow
     bool               startSynchro;       //! Флаг старта синхронизации
     Bcp2               *bcp2;              //! Обработчик BCP2
     Nmea               *nmea;              //! Обработчик NMEA
-    MWPORTELEMET       port1;              //! Вспомогательная структура с информацией об элементах порта 1
-    MWPORTELEMET       port2;              //! Вспомогательная структура с информацией об элементах порта 2
-    WMPORTSETSptr      portCurrentSets;    //! Текущие настройки порта
+    MainWindow::PORTELEMET  port1;              //! Вспомогательная структура с информацией об элементах порта 1
+    MainWindow::PORTELEMET  port2;              //! Вспомогательная структура с информацией об элементах порта 2
+    PORTSETSptr        portCurrentSets;    //! Текущие настройки порта
 #ifdef QT_DEBUG
     CByteArrayTextEdit *outDialog;         //! Интерфейс для вывода принятых байт пользователю (только для дебага)
     CByteArrayTextEdit *inDialog;          //! Интерфейс для вывода переданных байт байт пользователю (только для дебага)
 #endif
-    int                seekConnAttempts;   //! Количество попыток запроса версии при синхронизации
-    WMPORTSETS         reconnectSettings;  //! Структура для хранения настроек порта при переподключении
-    ModeCfg            *modeCfg;           //! Объект для обеспечения функционирования элемента "Режима работы"
-    MasterSlaveWidget  msWidget;           //! Объект для графического отображения блоков СУ 02
-    BasesWidget        basesWidget;        //! Объект для графического отображения информации о базах
-    /* Открытые методы */
-public:
-   /*!
-    * \brief     Конструктор класса MainWindow
-    * \remark    Основные связи элементов ГУИ и логики приложения находятся здесь
-    * \param[in] указатель на родительский виджет
-    ***********************************************************************************/
-    explicit MainWindow(QWidget *parent = nullptr);
-    /*!
-     * \brief     Деструктор класса MainWindow
-     ***********************************************************************************/
-    ~MainWindow();
-    /*!
-     * \brief     Установка значения комбобокса по заданной строке
-     * \remark    метод находит заданную строку в списке комбобокса, и если строка найдена
-     *            то устанавливает текущее значение комбобокса этой строкой
-     * \param[in] указатель на комбобокс к котором будет осуществлён поиск
-     * \param[in] строка которую необходимо искать в списке комбобокса и устанавливать
-     ***********************************************************************************/
-    void setComboxValueByStr(QComboBox *cbox, QString str);
-    /*!
-     * \brief     Попытка поменять установки порта
-     * \param[in] ссылка на вспомогательную структуру порта
-     ***********************************************************************************/
-    void tryChangePortSettings(MWPORTELEMET &port);
-    /*!
-     * \brief     Установка комбобоксов отвечающих за порт в активное состояние
-     * \param[in] ссылка на вспомогательную структуру порта
-     ***********************************************************************************/
-    void setCboxEnable(MWPORTELEMET &port);
-    /*!
-     * \brief     Установка комбобоксов отвечающих за порт в неактивное состояние
-     * \param[in] ссылка на вспомогательную структуру порта
-     ***********************************************************************************/
-    void setCboxDisable(MWPORTELEMET &port);
-    /*!
-     * \brief     Обновление содержимого лейблов порта
-     * \param[in] ссылка на вспомогательную структуру порта
-     * \param[in] ссылка на структуру с информацией о настройках порта
-     ***********************************************************************************/
-    void updatePortLabelContextBySets(MWPORTELEMET &port, Bcp2::PORTSETS &portSets);
-
+    int                seekConnAttempts;       //! Количество попыток запроса версии при синхронизации
+    PORTSETS           reconnectSettings;      //! Структура для хранения настроек порта при переподключении
+    ModeCfg            *modeCfg;               //! Объект для обеспечения функционирования элемента "Режима работы"
+    MasterSlaveWidget  msWidget;               //! Объект для графического отображения блоков СУ 02
+    BasesWidget        basesWidget;            //! Объект для графического отображения информации о базах
+    InfoWindow         *infoWindow;            //! указатель окна с дополнительной информацией
+    BasesManualWindow  *basesManualWindow;     //! указатель окна для ручного ввода баз
+    bool               updateSolutionTempCbox; //! Флаг факта обновления информации в комбобоксе темпа решения
+    bool               setFixWeekCorrection;   //! Флаг установки поправки опорной недели
+    bool               sendFloatSol[3];        //! Группа флагов для контроля обмена сообщениями о плавающем решении во время калибровки
     /* Закрытые методы */
-private:
     /*!
      * \brief     Инициализация элементов и логики COM порта (ЗАКРЫТЫЙ МЕТОД)
      ***********************************************************************************/
@@ -162,6 +140,35 @@ private:
      ***********************************************************************************/
     void dbgInitialization();
     /*!
+     * \brief     Установка значения комбобокса по заданной строке
+     * \remark    метод находит заданную строку в списке комбобокса, и если строка найдена
+     *            то устанавливает текущее значение комбобокса этой строкой
+     * \param[in] указатель на комбобокс к котором будет осуществлён поиск
+     * \param[in] строка которую необходимо искать в списке комбобокса и устанавливать
+     ***********************************************************************************/
+    void setComboxValueByStr(QComboBox *cbox, QString str);
+    /*!
+     * \brief     Попытка поменять установки порта
+     * \param[in] ссылка на вспомогательную структуру порта
+     ***********************************************************************************/
+    void tryChangePortSettings(PORTELEMET &port);
+    /*!
+     * \brief     Установка комбобоксов отвечающих за порт в активное состояние
+     * \param[in] ссылка на вспомогательную структуру порта
+     ***********************************************************************************/
+    void setCboxEnable(PORTELEMET &port);
+    /*!
+     * \brief     Установка комбобоксов отвечающих за порт в неактивное состояние
+     * \param[in] ссылка на вспомогательную структуру порта
+     ***********************************************************************************/
+    void setCboxDisable(PORTELEMET &port);
+    /*!
+     * \brief     Обновление содержимого лейблов порта
+     * \param[in] ссылка на вспомогательную структуру порта
+     * \param[in] ссылка на структуру с информацией о настройках порта
+     ***********************************************************************************/
+    void updatePortLabelContextBySets(PORTELEMET &port, Bcp2::PORTSETS &portSets);
+    /*!
      * \brief     Начало синхронизации (ЗАКРЫТЫЙ МЕТОД)
      * \todo      возможно необходимо пересмотреть и переделать
      ***********************************************************************************/
@@ -175,14 +182,18 @@ private:
      * \param[in] индекс элемента таблицы которого необходимо установить
      * \return    true - в случае успеха, false - в случае неудачи
      ***********************************************************************************/
-    bool tryPortSets(ComPort *port, WMPORTSETSptr setsTab, int setsTabSize, int currentTabIndex);
+    bool tryPortSets(ComPort *port, PORTSETSptr setsTab, int setsTabSize, int currentTabIndex);
+    /*!
+     * \brief     Попытка изменить настройки темпа решения (ЗАКРЫТЫЙ МЕТОД)
+     ************************************************************************************/
+    void tryChangeSolutionTemp();
     /*!
      * \brief     Получение индекса из таблицы настроек портов согласно заданым настройкам (ЗАКРЫТЫЙ МЕТОД)
      * \todo      Пересмотреть. Возвращаемое значание не очевидно в случае неудачи
      * \param[in] ссылка на структуру с задаными настройками
      * \return    индекс из таблицы настроек, либо максимальный размер таблицы
      ***********************************************************************************/
-    int getPortSettingsTabIndex(WMPORTSETS &sets) const;
+    int getPortSettingsTabIndex(PORTSETS &sets) const;
     /*!
      * \brief     Преобразует идентификатор расположения блоков из BCP2 в индекс элемента комбобокса(ЗАКРЫТЫЙ МЕТОД)
      * \param[in] идентификатор расположения блоков BCP2
@@ -208,6 +219,12 @@ private:
      ***********************************************************************************/
     void trySetAntennaCfg(double base1, double base2, double base3);
     /*!
+     * \brief     Извлекает из поля работы СУ 02 BCP2 признак расположения ведомого(ЗАКРЫТЫЙ МЕТОД)
+     * \param[in] идентификатор расположения блоков BCP2
+     * \return    true - ведомый спереди, false - ведомый сзади
+     ***********************************************************************************/
+    bool modeCfgSlaveForawardSignFormWorkMode(Bcp2::Workmodes id);
+    /*!
      * \brief     Установить значения баз в графическом интерфейсе при коллинеарном размещении
      ***********************************************************************************/
     void setBasesCollinearValues();
@@ -215,6 +232,11 @@ private:
      * \brief     Установить значения баз в графическом интерфейсе при паралельном размещении
      ***********************************************************************************/
     void setBasesParallelValues();
+    /*!
+     * \brief     Получение значения темпа решения по значению индекса комбобокса
+     * \param[in] Значение индекса комбобкса в соответствии и индексаи SolutionTempCbox
+     ***********************************************************************************/
+    int getSolutionTempByCboxIndex(int index);
 };
 
 #endif // MAINWINDOW_H

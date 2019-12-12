@@ -2,39 +2,46 @@
 #include "ui_mainwindow.h"
 #include <QMessageBox>
 #include <QThread>
+#include <math.h>
+
+#define VERSION " (01.01)"
 
 // Таблица с настройками портов для перебора
 //! \todo Пересмотреть. По хорошему должно быть константой.
-static WMPORTSETS portSetsTab[MAX_PORT_SPEED_TAB_SIZE] =
+static MainWindow::PORTSETS portSetsTab[MAX_PORT_SPEED_TAB_SIZE] =
 {
-  {230400, WmPortProtocolTypes_BCP2},
-  {230400, WmPortProtocolTypes_NMEA},
-  {115200, WmPortProtocolTypes_BCP2},
-  {115200, WmPortProtocolTypes_NMEA},
-  {57600, WmPortProtocolTypes_BCP2},
-  {57600, WmPortProtocolTypes_NMEA},
-  {56000, WmPortProtocolTypes_BCP2},
-  {56000, WmPortProtocolTypes_NMEA},
-  {38400, WmPortProtocolTypes_BCP2},
-  {38400, WmPortProtocolTypes_NMEA},
-  {19200, WmPortProtocolTypes_BCP2},
-  {19200, WmPortProtocolTypes_NMEA},
-  {14400, WmPortProtocolTypes_BCP2},
-  {14400, WmPortProtocolTypes_NMEA},
-  {9600, WmPortProtocolTypes_BCP2},
-  {9600, WmPortProtocolTypes_NMEA},
-  {4800, WmPortProtocolTypes_BCP2},
-  {4800, WmPortProtocolTypes_NMEA},
-  {2400, WmPortProtocolTypes_BCP2},
-  {2400, WmPortProtocolTypes_NMEA},
-  {1200, WmPortProtocolTypes_BCP2},
-  {1200, WmPortProtocolTypes_NMEA},
-  {600, WmPortProtocolTypes_BCP2},
-  {600, WmPortProtocolTypes_NMEA},
-  {300, WmPortProtocolTypes_BCP2},
-  {300, WmPortProtocolTypes_NMEA},
-  {150, WmPortProtocolTypes_BCP2},
-  {150, WmPortProtocolTypes_NMEA},
+ /* {921600, ProtocolType_BCP2},
+  {921600, MainWindow::ProtocolType_NMEA},*/
+  {460800, MainWindow::ProtocolType_BCP2},
+  {460800, MainWindow::ProtocolType_NMEA},
+  {230400, MainWindow::ProtocolType_BCP2},
+  {230400, MainWindow::ProtocolType_NMEA},
+  {115200, MainWindow::ProtocolType_BCP2},
+  {115200, MainWindow::ProtocolType_NMEA},
+  {57600, MainWindow::ProtocolType_BCP2},
+  {57600, MainWindow::ProtocolType_NMEA},
+  {56000, MainWindow::ProtocolType_BCP2},
+  {56000, MainWindow::ProtocolType_NMEA},
+  {38400, MainWindow::ProtocolType_BCP2},
+  {38400, MainWindow::ProtocolType_NMEA},
+  {19200, MainWindow::ProtocolType_BCP2},
+  {19200, MainWindow::ProtocolType_NMEA},
+  {14400, MainWindow::ProtocolType_BCP2},
+  {14400, MainWindow::ProtocolType_NMEA},
+  {9600, MainWindow::ProtocolType_BCP2},
+  {9600, MainWindow::ProtocolType_NMEA},
+  {4800, MainWindow::ProtocolType_BCP2},
+  {4800, MainWindow::ProtocolType_NMEA},
+  {2400, MainWindow::ProtocolType_BCP2},
+  {2400, MainWindow::ProtocolType_NMEA},
+  {1200, MainWindow::ProtocolType_BCP2},
+  {1200, MainWindow::ProtocolType_NMEA},
+  {600, MainWindow::ProtocolType_BCP2},
+  {600, MainWindow::ProtocolType_NMEA},
+  {300, MainWindow::ProtocolType_BCP2},
+  {300, MainWindow::ProtocolType_NMEA},
+  {150, MainWindow::ProtocolType_BCP2},
+  {150, MainWindow::ProtocolType_NMEA},
 };
 /*!
  * \brief     Конструктор класса MainWindow
@@ -46,11 +53,28 @@ MainWindow::MainWindow(QWidget *parent) :
     ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
-
-    ui->checkBox_2->setEnabled(false);  //! \todo заготовка
-    ui->lineEdit->setEnabled(false);    //! \todo заготовка
-//  Инициализация локализации в английской раскладке для работы с double с точкой вместо запятой в строковом представлении
+    QString title = "Конфигуратор СУ 02";
+    title += VERSION;
+    setWindowTitle(title);
+    setWindowIcon(QIcon(":MainIcon"));
+// Инициализация элементов для задания расстояния вручную
+  //  ui->checkBox_2->setEnabled(false);  //! \todo заготовка
+   // ui->lineEdit->setEnabled(false);    //! \todo заготовка
+// Инициализация локализации в английской раскладке для работы с double с точкой вместо запятой в строковом представлении
     QLocale::setDefault(QLocale(QLocale::English, QLocale::UnitedStates));
+// Инициализация окна подробной информациии
+    infoWindow = new InfoWindow(this);
+    ui->ShowInfoBtn->setEnabled(false);
+
+    basesManualWindow = new BasesManualWindow(this);
+// Инициализация чекбокса темпа решения
+    ui->SolutionTempCbox->setEnabled(false);
+    ui->SolutionTempCbox->clear();
+    updateSolutionTempCbox = false;
+
+    sendFloatSol[0] = false;
+    sendFloatSol[1] = false;
+    sendFloatSol[2] = false;
 // Инициализация элементов и логики Com порта
     comPortInitialization();
 // Инициализация элементов и логики BCP2
@@ -92,7 +116,7 @@ void MainWindow::setComboxValueByStr(QComboBox *cbox, QString str)
  * \brief     Попытка поменять установки порта
  * \param[in] ссылка на вспомогательную структуру порта
  ***********************************************************************************/
-void MainWindow::tryChangePortSettings(MWPORTELEMET &port)
+void MainWindow::tryChangePortSettings(PORTELEMET &port)
 {
     if(((port.cbox.speed->currentText().compare(port.label.speed->text()) != 0)
     || (port.cbox.protocol->currentText().compare(port.label.protocol->text()) != 0))) {
@@ -110,7 +134,7 @@ void MainWindow::tryChangePortSettings(MWPORTELEMET &port)
           errMsg.exec();
           return;
       }
-      if(portCurrentSets->protocol == WmPortProtocolTypes_BCP2){
+      if(portCurrentSets->protocol == ProtocolType_BCP2){
           Bcp2::PORTSETS newPortSets;
 
           newPortSets.portid   = port.bcp2Id;
@@ -121,17 +145,22 @@ void MainWindow::tryChangePortSettings(MWPORTELEMET &port)
 #else
           bcp2->setPortSettingsRequest(newPortSets);
 #endif
-          if(port.bcp2Id == Bcp2::Port_1){
+          if(port.bcp2Id == Bcp2::Debug){
               reconnectSettings.speed = newPortSets.speed;
               if(newPortSets.protocol == Bcp2::Protocol_NMEA)
-                  reconnectSettings.protocol = WmPortProtocolTypes_NMEA;
+                  reconnectSettings.protocol = MainWindow::ProtocolType_NMEA;
               else
-                  reconnectSettings.protocol = WmPortProtocolTypes_BCP2;
+                  reconnectSettings.protocol = ProtocolType_BCP2;
           }
 
       } else {
           NMEA_PORTSETS newPortSets;
-          newPortSets.id       = port.nmeaId;
+
+          if(port.nmeaId == NmeaPortId_3)              // Для управляющего порта всегда устанавливать текущий, так как по NMEA может быть подключен второй порт
+              newPortSets.id     = NmeaPortId_Current;
+          else
+            newPortSets.id       = port.nmeaId;
+
           newPortSets.speed    = port.cbox.speed->currentText().toULong();
           newPortSets.protocol =  nmea->getProtocolIdNameByStr(port.cbox.protocol->currentText());
 #ifdef QT_DEBUG
@@ -142,9 +171,9 @@ void MainWindow::tryChangePortSettings(MWPORTELEMET &port)
 
           reconnectSettings.speed = newPortSets.speed;
           if(newPortSets.protocol == NmeaProtocolType_NMEA)
-              reconnectSettings.protocol = WmPortProtocolTypes_NMEA;
+              reconnectSettings.protocol = MainWindow::ProtocolType_NMEA;
           else
-              reconnectSettings.protocol = WmPortProtocolTypes_BCP2;
+              reconnectSettings.protocol = ProtocolType_BCP2;
       }
     }
 }
@@ -152,7 +181,7 @@ void MainWindow::tryChangePortSettings(MWPORTELEMET &port)
  * \brief     Установка комбобоксов отвечающих за порт в активное состояние
  * \param[in] ссылка на вспомогательную структуру порта
  ***********************************************************************************/
-void MainWindow::setCboxEnable(MWPORTELEMET &port)
+void MainWindow::setCboxEnable(PORTELEMET &port)
 {
     port.cbox.speed->setEnabled(true);
     port.cbox.protocol->setEnabled(true);
@@ -162,7 +191,7 @@ void MainWindow::setCboxEnable(MWPORTELEMET &port)
  * \remark    дополните
  * \param[in] ссылка на вспомогательную структуру порта
  ***********************************************************************************/
-void MainWindow::setCboxDisable(MWPORTELEMET &port)
+void MainWindow::setCboxDisable(PORTELEMET &port)
 {
     port.cbox.speed->setEnabled(false);
     port.cbox.protocol->setEnabled(false);
@@ -174,7 +203,7 @@ void MainWindow::setCboxDisable(MWPORTELEMET &port)
  * \param[in] ссылка на вспомогательную структуру порта
  * \param[in] ссылка на структуру с информацией о настройках порта
  ***********************************************************************************/
-void MainWindow::updatePortLabelContextBySets(MWPORTELEMET &port, Bcp2::PORTSETS &portSets)
+void MainWindow::updatePortLabelContextBySets(PORTELEMET &port, Bcp2::PORTSETS &portSets)
 {
     port.label.speed->setText(QString::number(portSets.speed));
     port.label.protocol->setText(bcp2->getProtocolStrNameById(portSets.protocol));
@@ -188,7 +217,7 @@ void MainWindow::updatePortLabelContextBySets(MWPORTELEMET &port, Bcp2::PORTSETS
 void MainWindow::StartSynchronization()
 {
     QThread::msleep(100);
-    if(portCurrentSets->protocol == WmPortProtocolTypes_BCP2)
+    if(portCurrentSets->protocol == ProtocolType_BCP2)
 #ifdef QT_DEBUG
       inDialog->print(bcp2->versionRequest(Bcp2::Address_NAP));
     else
@@ -210,13 +239,13 @@ void MainWindow::StartSynchronization()
  * \param[in] индекс элемента таблицы которого необходимо установить
  * \return    true - в случае успеха, false - в случае неудачи
  ***********************************************************************************/
-bool MainWindow::tryPortSets(ComPort *port, WMPORTSETSptr setsTab, int setsTabSize, int currentTabIndex)
+bool MainWindow::tryPortSets(ComPort *port, PORTSETSptr setsTab, int setsTabSize, int currentTabIndex)
 {
     bool result = false;
 
     if((currentTabIndex < setsTabSize) && (port != nullptr) && (!port->isOpen())) {
 
-        if(setsTab[currentTabIndex].protocol == WmPortProtocolTypes_BCP2) {
+        if(setsTab[currentTabIndex].protocol == ProtocolType_BCP2) {
 #ifdef QT_DEBUG
             // переключение режима отображения дебага в 16-й вид
             outDialog->setHexView(true);
@@ -254,11 +283,16 @@ bool MainWindow::tryPortSets(ComPort *port, WMPORTSETSptr setsTab, int setsTabSi
  ***********************************************************************************/
 void MainWindow::trySetWorkMode(ModeCfg::MODECFG cfg)
 {
-#ifdef QT_DEBUG
+    if(ui->ProtocolLabel->text().compare("BINR") == 0) {  // если текущий протокол BINR)
+       bcp2->setWorkModeRequest(bcp2WorkModeFromModeCfg(cfg));
+    } else {
+       bcp2->setWorkModeRequest(Bcp2::Address_NAP, bcp2WorkModeFromModeCfg(cfg));
+    }
+/*#ifdef QT_DEBUG
         inDialog->print(bcp2->setWorkModeRequest(Bcp2::Address_NAP, bcp2WorkModeFromModeCfg(cfg)));
 #else
         bcp2->setWorkModeRequest(Bcp2::Address_NAP, bcp2WorkModeFromModeCfg(cfg));
-#endif
+#endif*/
 
 }
 /*!
@@ -272,12 +306,18 @@ void MainWindow::trySetAntennaCfg(double base1, double base2, double base3)
     Bcp2::ANTENNACFG cfg;
 
     cfg.base1LenMm = static_cast<unsigned long>(base1*1000);
+    if(!cfg.base1LenMm)
+        cfg.base1LenMm = 120;
     cfg.base2LenMm = static_cast<unsigned long>(base2*1000);
+    if(!cfg.base2LenMm)
+        cfg.base2LenMm = 240;
     cfg.base3LenMm = static_cast<unsigned long>(base3*1000);
+    if(!cfg.base3LenMm)
+        cfg.base3LenMm = 360;
 #ifdef QT_DEBUG
         inDialog->print(bcp2->setAntennaCfg(cfg));
 #else
-        bcp2->setAntennaCfg(Bcp2::Address_NAP, cfg);
+        bcp2->setAntennaCfg(cfg);
 #endif
 
 }
@@ -287,7 +327,7 @@ void MainWindow::trySetAntennaCfg(double base1, double base2, double base3)
  * \param[in] ссылка на структуру с задаными настройками
  * \return    индекс из таблицы настроек, либо максимальный размер таблицы
  ***********************************************************************************/
-int MainWindow::getPortSettingsTabIndex(WMPORTSETS &sets) const
+int MainWindow::getPortSettingsTabIndex(PORTSETS &sets) const
 {
     for(int i = 0; i < MAX_PORT_SPEED_TAB_SIZE; i++){
         if((portSetsTab[i].speed == sets.speed)
@@ -305,17 +345,30 @@ int MainWindow::getPortSettingsTabIndex(WMPORTSETS &sets) const
  ***********************************************************************************/
 ModeCfg::Positions MainWindow::modeCfgPositionFromBcp2WorkMode(Bcp2::Workmodes id)
 {
-    if(id & Bcp2::Workmode_MasterCollinear){
+    if(!(id & Bcp2::Workmode_Free)){
+        if(id & Bcp2::Workmode_Collinear){
+            if(id & Bcp2::Workmode_SlaveTurn)
+                return ModeCfg::Position_Collinear_Turn;
+            if(id & Bcp2::Workmode_SlaveCollinear)
+                return ModeCfg::Position_Collinear;
+            if (id & Bcp2::Workmode_SlaveParallel)
+                    return ModeCfg::Position_Parallel;
 
-        if(id & Bcp2::Workmode_SlaveCollinear)
-            return ModeCfg::Position_Collinear;
-        else if (id & Bcp2::Workmode_SlaveParallel)
-                return ModeCfg::Position_Parallel;
+        }
+    }
 
-    } else if(id & Bcp2::Workmode_MasterFree)
-                return ModeCfg::Position_Free;
-
-    return ModeCfg::Position_Empty;
+    return ModeCfg::Position_Max;
+}
+/*!
+ * \brief     Извлекает из поля работы СУ 02 BCP2 признак расположения ведомого(ЗАКРЫТЫЙ МЕТОД)
+ * \param[in] идентификатор расположения блоков BCP2
+ * \return    true - ведомый спереди, false - ведомый сзади
+ ***********************************************************************************/
+bool MainWindow::modeCfgSlaveForawardSignFormWorkMode(Bcp2::Workmodes id)
+{
+    if(id & Bcp2::Workmode_TypeA)
+        return true;
+    return false;
 }
 /*!
  * \brief     Преобразует настройки режима работы СУ2 из структуры в байтовое поле данных для BCP2(ЗАКРЫТЫЙ МЕТОД)
@@ -332,11 +385,25 @@ unsigned char MainWindow::bcp2WorkModeFromModeCfg(ModeCfg::MODECFG cfg)
         ret = 0;
 
     switch(cfg.position) {
-        case ModeCfg::Position_Collinear:  ret |= ((Bcp2::Workmode_MasterCollinear | Bcp2::Workmode_SlaveCollinear) << 1);
+        /*case ModeCfg::Position_Free:            ret |= ((Bcp2::Workmode_SlaveParallel | Bcp2::Workmode_Free) << 1);
+            break;*/
+        case ModeCfg::Position_Parallel:        ret |= ((Bcp2::Workmode_Collinear | Bcp2::Workmode_SlaveParallel) << 1);
+                                                if(!cfg.slaveForwardSign)
+                                                  ret |= (Bcp2::Workmode_TypeA << 1);
+                                                else
+                                                  ret |= (Bcp2::Workmode_TypeB << 1);
             break;
-        case ModeCfg::Position_Parallel:   ret |= ((Bcp2::Workmode_MasterCollinear | Bcp2::Workmode_SlaveParallel) << 1);
+        case ModeCfg::Position_Collinear:       ret |= ((Bcp2::Workmode_Collinear | Bcp2::Workmode_SlaveCollinear) << 1);
+                                                if(!cfg.slaveForwardSign)
+                                                    ret |= (Bcp2::Workmode_TypeA << 1);
+                                                else
+                                                    ret |= (Bcp2::Workmode_TypeB << 1);
             break;
-        case ModeCfg::Position_Free:       ret |= (Bcp2::Workmode_MasterFree << 1);
+        case ModeCfg::Position_Collinear_Turn:  ret |= ((Bcp2::Workmode_Collinear | Bcp2::Workmode_SlaveTurn) << 1);
+                                                if(!cfg.slaveForwardSign)
+                                                    ret |= (Bcp2::Workmode_TypeA << 1);
+                                                else
+                                                    ret |= (Bcp2::Workmode_TypeB << 1);
             break;
         default:;
     }
@@ -366,6 +433,7 @@ void MainWindow::setBasesParallelValues()
  ***********************************************************************************/
 void MainWindow::comPortInitialization()
 {
+    setFixWeekCorrection = false;
 // Создание  и инициализация порта
     port = new ComPort(ui->connBtn, ui->PortCb);
     port->setDisconnectBtnText("Открыть");
@@ -373,16 +441,16 @@ void MainWindow::comPortInitialization()
     portSpeedIndex = 0;
 // Инициализация вспомогательных структур для работы с однотипными комбобоксами и лейблами портов
     port1.name           = "порт 1";
-    port1.bcp2Id         = Bcp2::Port_1;
-    port1.nmeaId         = NmeaPortId_1;
+    port1.bcp2Id         = Bcp2::Debug;
+    port1.nmeaId         = NmeaPortId_3;
     port1.label.speed    = ui->StatusLabel;
     port1.label.protocol = ui->ProtocolLabel;
     port1.cbox.speed     = ui->port1SpeedCb;
     port1.cbox.protocol  = ui->port1ProtocolCb;
 
     port2.name           = "порт 2";
-    port2.bcp2Id         = Bcp2::Port_2;
-    port2.nmeaId         = NmeaPortId_2;
+    port2.bcp2Id         = Bcp2::Port_1;
+    port2.nmeaId         = NmeaPortId_1;
     port2.label.speed    = ui->port2SpeedLbl;
     port2.label.protocol = ui->port2ProtocolLbl;
     port2.cbox.speed     = ui->port2SpeedCb;
@@ -409,6 +477,10 @@ void MainWindow::comPortInitialization()
             ui->SendTe->clear();
             dbgPrintTimer->start();
 #endif
+            if(ui->portUserSpeedCbox->currentIndex() != 0){
+                PORTSETS sets = {ui->portUserSpeedCbox->currentText().toULong(), ProtocolType_BCP2};
+                portSpeedIndex = getPortSettingsTabIndex(sets);
+            }
             tryPortSets(port, portSetsTab, MAX_PORT_SPEED_TAB_SIZE, portSpeedIndex);
         } else {
             if(seekTimerState) {
@@ -419,7 +491,7 @@ void MainWindow::comPortInitialization()
             dbgPrintTimer->stop();
 #endif
             //modeCfg->setCboxState(false);
-            ModeCfg::MODECFG reset = {false, ModeCfg::Position_Empty};
+            ModeCfg::MODECFG reset = {false, false, ModeCfg::Position_Collinear};
             modeCfg->setMode(reset);
             portSpeedIndex = 0;
           }
@@ -427,7 +499,7 @@ void MainWindow::comPortInitialization()
 // Обработка успешного открытия порта
       connect(port, &ComPort::openSignal, [=]{
           port1.label.speed->setText(QString::number(port->getBaudrate()));
-          if(portCurrentSets->protocol == WmPortProtocolTypes_BCP2)
+          if(portCurrentSets->protocol == ProtocolType_BCP2)
               port1.label.protocol->setText("BCP2");
           else
               port1.label.protocol->setText("NMEA");
@@ -460,11 +532,24 @@ void MainWindow::comPortInitialization()
           basesWidget.cleanBase2();
           basesWidget.cleanBase3();
           basesWidget.setDisable();
+          basesWidget.setBtnDisable();
           setCboxDisable(port1);
           setCboxDisable(port2);
           ui->SetBtn->setEnabled(false);
           modeCfg->setDisable();
           msWidget.setEnable(false);
+          ui->ShowInfoBtn->setEnabled(false);
+          infoWindow->close();
+          basesManualWindow->unexpectedShutdown();
+
+          infoWindow->stopInfoMonitoring();
+          ui->NavSolutionLbl->setText("н/д");
+          ui->SolutionTempCbox->setEnabled(false);
+          //ui->SolutionTempCbox->setCurrentIndex(0);
+          ui->SolutionTempCbox->clear();
+          updateSolutionTempCbox = false;
+          basesWidget.setCheckDisable();
+          setFixWeekCorrection = false;
       });
 // Обработка ошибок возникших во время работы порта
       connect(port, &ComPort::errorSignal, [=]{
@@ -482,12 +567,14 @@ void MainWindow::comPortInitialization()
       });
 // Обработка нажатия кнопки "установить"
       connect(ui->SetBtn, &QPushButton::clicked, [=]{
-          if(portCurrentSets->protocol == WmPortProtocolTypes_BCP2){  // Все настройки кроме настроек управляющего порта можно устанавливать только если управляющий порт настроен на BCP2
+          if(portCurrentSets->protocol == ProtocolType_BCP2){  // Все настройки кроме настроек управляющего порта можно устанавливать только если управляющий порт настроен на BCP2
               trySetWorkMode(modeCfg->getMode());
               QThread::msleep(100);
               tryChangePortSettings(port2);
               QThread::msleep(100);
               trySetAntennaCfg(basesWidget.getBase1Value(), basesWidget.getBase2Value(), basesWidget.getBase3Value());
+              QThread::msleep(100);
+              tryChangeSolutionTemp();
               QThread::msleep(100);
           }
           tryChangePortSettings(port1);  //! \warning Последовательность важна.. Смена настроек первого порта должна вызываться последней...
@@ -522,16 +609,6 @@ void MainWindow::comPortInitialization()
               portSpeedIndex = 0;
           }
       });
-// Обработка отсутствия ответа на запрос или команду
-      connect(waitAnswerTimer, &QTimer::timeout, [=]{
-          QMessageBox msgBox;
-
-          port->closePort();
-          portSpeedIndex = 0;
-          waitAnswerTimer->stop();
-          msgBox.setText("Потеряна связь с прибором");
-          msgBox.exec();
-      });
 }
 /*!
  * \brief     Инициализация элементов и логики BCP2 (ЗАКРЫТЫЙ МЕТОД)
@@ -550,54 +627,83 @@ void MainWindow::bcp2Initialization()
         }
         connSuccess= true;
 #ifdef QT_DEBUG
-        inDialog->print(bcp2->portSettingsRequest(Bcp2::Port_2));
+        inDialog->print(bcp2->portSettingsRequest(port2.bcp2Id));
+        inDialog->print(bcp2->setAngleOrientationRequest(1));
 #else
-        bcp2->portSettingsRequest(Bcp2::Port_2);
+        bcp2->portSettingsRequest(port2.bcp2Id);
+        bcp2->setAngleOrientationRequest(1);
 #endif // QT_DEBUG
         setCboxEnable(port1);
         setCboxEnable(port2);
         ui->SetBtn->setEnabled(true);
         setComboxValueByStr(port1.cbox.speed,    port1.label.speed->text());
         setComboxValueByStr(port1.cbox.protocol, port1.label.protocol->text());
+        infoWindow->resetAllValues();
+        ui->ShowInfoBtn->setEnabled(true);
+        infoWindow->startInfoMonitoring();
+        ui->SolutionTempCbox->addItem("1 Гц");
+        ui->SolutionTempCbox->addItem("2 Гц");
+        ui->SolutionTempCbox->addItem("5 Гц");
+        ui->SolutionTempCbox->addItem("10 Гц");
+        ui->SolutionTempCbox->setEnabled(true);
     });
 // Обработка успешного приёма настроек порта
     connect(bcp2, &Bcp2::recievePortSettingsSignal, [=](Bcp2::PORTSETS portSets){
         static bool getPort1SetsFlag = false;
 
-        //portSets = bcp2->getPortSettingsFromData(portData);
-        if(portSets.portid == Bcp2::Port_2){
+        if(portSets.portid == port2.bcp2Id){
             // обработка запроса или установки скорости порта 2
             updatePortLabelContextBySets(port2, portSets);
             setComboxValueByStr(port2.cbox.speed,    port2.label.speed->text());
             setComboxValueByStr(port2.cbox.protocol, port2.label.protocol->text());
             getPort1SetsFlag = true;
 #ifdef QT_DEBUG
-        inDialog->print(bcp2->portSettingsRequest(Bcp2::Port_1));
+        inDialog->print(bcp2->portSettingsRequest(port1.bcp2Id));
 #else
-        bcp2->portSettingsRequest(Bcp2::Port_1);
+        bcp2->portSettingsRequest(port1.bcp2Id);
 #endif
 
         } else {
             // обработка запроса или установки скорости порта 1
             if(getPort1SetsFlag) {
                 // получение настроек
-                updatePortLabelContextBySets(port1, portSets);
-                setComboxValueByStr(port1.cbox.speed,    port1.label.speed->text());
-                setComboxValueByStr(port1.cbox.protocol, port1.label.protocol->text());
+                if(portCurrentSets->speed == portSets.speed) {
+                  if((portCurrentSets->protocol == ProtocolType_BCP2)
+                  && (portSets.protocol == Bcp2::Protocol_BINR))
+                      updatePortLabelContextBySets(port1, portSets);
+
+                }
+                setComboxValueByStr(port1.cbox.speed,    QString::number(portSets.speed));
+                setComboxValueByStr(port1.cbox.protocol, bcp2->getProtocolStrNameById(portSets.protocol));
                 getPort1SetsFlag = false;
+
+/*
 #ifdef QT_DEBUG
                 inDialog->print(bcp2->workModeRequest(Bcp2::Address_NAP));
+               // inDialog->print(bcp2->workModeRequest());
 #else
                 bcp2->workModeRequest(Bcp2::Address_NAP);
+#endif*/
+                if(ui->ProtocolLabel->text().compare("BINR") == 0) {  // если текущий протокол BINR
+#ifdef QT_DEBUG
+                inDialog->print(bcp2->getSolutionTempRequest());
+#else
+                bcp2->workModeRequest();
+                bcp2->getSolutionTempRequest();
 #endif
+                } else {
+#ifdef QT_DEBUG
+                  inDialog->print(bcp2->getSolutionTempRequest(Bcp2::Address_NAP));
+#else
+                  bcp2->workModeRequest(Bcp2::Address_NAP);
+                  bcp2->getSolutionTempRequest(Bcp2::Address_NAP);
+#endif
+                }
             } else {
                 // установка настроек
-                QThread::msleep(100);
                 port->closePort();
+                QThread::msleep(100);
                 portSpeedIndex = getPortSettingsTabIndex(reconnectSettings) - 1;
-               // portSpeedIndex = -1;  //! \remark Установка значения -1 для того чтобы при старте перебор скоростей начался с нулевого индекса (там стоит операция ++)
-                                      //! \todo возможно как-то надо переделать
-               // connSuccess    = false;
                 seekConnTimer->start();
           }
         }
@@ -608,51 +714,151 @@ void MainWindow::bcp2Initialization()
 
         newModeCfg.mode = bool(workModeData.at(1) & 0x01);
         newModeCfg.position = modeCfgPositionFromBcp2WorkMode(Bcp2::Workmodes(workModeData.at(1) >> 1));
+        newModeCfg.slaveForwardSign = modeCfgSlaveForawardSignFormWorkMode(Bcp2::Workmodes(workModeData.at(1) >> 1));
         modeCfg->setEnable();
         modeCfg->setMode(newModeCfg);
+
+#ifdef QT_DEBUG
+        inDialog->print(bcp2->antennaCfgRequest());
+#else
+        bcp2->antennaCfgRequest();
+#endif
 
         if(newModeCfg.mode){
             ui->SumModeLbl->setText("включён");
         }
         else {
             ui->SumModeLbl->setText("отключён");
+            ui->SumPosLbl->setText("н/д");
+            return;
         }
 
         switch(newModeCfg.position){
-        case ModeCfg::Position_Collinear: ui->SumPosLbl->setText("коллинеарно");
-#ifdef QT_DEBUG
-                                     inDialog->print(bcp2->antennaCfgRequest());
-#else
-                                     bcp2->antennaCfgRequest(Bcp2::Address_NAP);
-#endif
+        case ModeCfg::Position_Collinear_Turn: ui->SumPosLbl->setText("соосно развёрнуты");
+                                               if(newModeCfg.mode)
+                                                 msWidget.setEnable(true);
+            break;
+        case ModeCfg::Position_Collinear: ui->SumPosLbl->setText("соосно");
                                           if(newModeCfg.mode)
                                               msWidget.setEnable(true);
             break;
         case ModeCfg::Position_Parallel: ui->SumPosLbl->setText("параллельно");
-#ifdef QT_DEBUG
-                                     inDialog->print(bcp2->antennaCfgRequest());
-#else
-                                     bcp2->antennaCfgRequest(Bcp2::Address_NAP);
-#endif
                                          if(newModeCfg.mode)
                                              msWidget.setEnable(true);
             break;
-        case ModeCfg::Position_Free: ui->SumPosLbl->setText("свободно");
-#ifdef QT_DEBUG
-                                     inDialog->print(bcp2->antennaCfgRequest());
-#else
-                                     bcp2->antennaCfgRequest(Bcp2::Address_NAP);
-#endif
+       /* case ModeCfg::Position_Free: ui->SumPosLbl->setText("свободно");
 
-            break;
+            break;*/
         default:  ui->SumPosLbl->setText("н/д");
         }
+
+        basesManualWindow->setsBlockTypeConfirm();
     });
 // Обработка успешного приёма установки антенной конфигурации
     connect(bcp2, &Bcp2::receiveAntennaCfgSignal, [=](Bcp2::ANTENNACFG cfg){
         basesWidget.setBase1Value(static_cast<double>(cfg.base1LenMm/1000.));
         basesWidget.setBase2Value(static_cast<double>(cfg.base2LenMm/1000.));
         basesWidget.setBase3Value(static_cast<double>(cfg.base3LenMm/1000.));
+        if(modeCfg->getMode().position == ModeCfg::Position_Parallel)
+            basesWidget.setParallelDistance();
+        else
+            if((modeCfg->getMode().position == ModeCfg::Position_Collinear) || (modeCfg->getMode().position == ModeCfg::Position_Collinear_Turn)){
+                basesWidget.setCollinearDistance();
+            } else
+                basesWidget.cleanDistance();
+
+    });
+// Обработка успешного приёма навигационной информации
+    connect(bcp2, &Bcp2::receiveVectorStateSignal, [=](Bcp2::VECTORSTATE vector){
+        if(vector.status & Bcp2::Solution_Present)
+        {
+            ui->NavSolutionLbl->setText("есть");
+            if(!setFixWeekCorrection){
+#ifdef QT_DEBUG
+               inDialog->print(bcp2->getTimezoneRequest());
+#else
+               bcp2->getTimezoneRequest();
+#endif
+
+            }
+        }
+        else
+        {
+            ui->NavSolutionLbl->setText("нет");
+            setFixWeekCorrection = false;
+        }
+       infoWindow->fillInfoSlot(vector);
+    });
+// Обработка нажатия кнопки открытия окна дополнительной инфомарции
+    connect(ui->ShowInfoBtn, &QPushButton::clicked, [=]{
+       infoWindow->show();
+    });
+// Обработка отсутствия данных для окна InfoWindow
+    connect(infoWindow, &InfoWindow::noInfoSignal, [=]{
+#ifdef QT_DEBUG
+        inDialog->print(bcp2->setVectorStateRequest(Bcp2::Address_RNPI_1, 1));
+#else
+        if(ui->ProtocolLabel->text().compare("BINR") == 0)  // если текущий протокол BINR
+            bcp2->setVectorStateRequest(1);
+        else
+            bcp2->setVectorStateRequest(Bcp2::Address_RNPI_1, 1);
+#endif
+        ui->NavSolutionLbl->setText("н/д");
+
+    });
+// Обработка выбора темпа решения в комбобоксе пользователем
+    connect(ui->SolutionTempCbox, QOverload<int>::of(&QComboBox::currentIndexChanged), [=](int index){
+        int temp = getSolutionTempByCboxIndex(index);
+        if(temp && temp != infoWindow->getSolutionTemp()){
+            updateSolutionTempCbox = true;
+        } else {
+            updateSolutionTempCbox = false;
+        }
+    });
+// Обработка отсутствия ответа на запрос или команду
+    connect(bcp2, &Bcp2::noAnswerTimeoutOnPkgSignal, [=](unsigned char id){
+            QMessageBox msgBox;
+
+           // if(id == 0x26) {
+                port->closePort();
+                portSpeedIndex = 0;
+                waitAnswerTimer->stop();
+
+                msgBox.setText("Потеряна связь с прибором.\r\nНет ответа на пакет: 0х" + QString("%1").arg(id, 0, 16).rightJustified(2, '0'));
+                msgBox.exec();
+           // }
+     });
+// Обработка получения параметра темпа решения
+    connect(bcp2, &Bcp2::receiveTempSolutionSignal, [=](int temp){
+        switch(temp){
+          case 2:    ui->SolutionTempCbox->setCurrentIndex(1);
+            break;
+          case 5:    ui->SolutionTempCbox->setCurrentIndex(2);
+            break;
+          case 10:    ui->SolutionTempCbox->setCurrentIndex(3);
+            break;
+          default:   ui->SolutionTempCbox->setCurrentIndex(0);
+        }
+        infoWindow->setTemp(temp);
+    });
+// Обработка получения угловой оринетации
+    connect(bcp2, &Bcp2::receiveAngleOrientationSignal, [=](Bcp2::ANGLEORIENTATION state){
+        if(state.status & Bcp2::Angle_Present)
+            ui->AngleSolutionLbl->setText("есть");
+        else
+            ui->AngleSolutionLbl->setText("нет");
+
+        infoWindow->fillInfoSlot(state);
+    });
+// Обработка успешного приёма даты, времени и часового пояса
+    connect(bcp2, &Bcp2::recieverTimezoneSignal, [=](Bcp2::TIMEDATATIMEZONE timezone){
+       if((timezone.day != 0)
+       && (timezone.mon != 0)
+       && (timezone.year != 0)){
+           Bcp2::DATE trueDate = {timezone.day, timezone.mon, timezone.year};
+           bcp2->setFixWeekCorrection(trueDate);
+           setFixWeekCorrection = true;
+       }
     });
 }
 /*!
@@ -692,15 +898,11 @@ void MainWindow::nmeaInitialization()
             QThread::msleep(100);
             port->closePort();
             portSpeedIndex = getPortSettingsTabIndex(reconnectSettings) - 1;
-            // portSpeedIndex = -1;  //! \remark Установка значения -1 для того чтобы при старте перебор скоростей начался с нулевого индекса (там стоит операция ++)
-                                        //! \todo возможно как-то надо переделать
-            //  connSuccess    = false;
             seekConnTimer->start();
         }
 
         if(msgId.compare("OVSU") == 0){
             waitAnswerTimer->stop();
-            //modeCfg->setAllWidgetsEnable();
         }
     });
 // Обработка ошибок при работе с протоколом NMEA
@@ -740,7 +942,9 @@ void MainWindow::su2GraphicalElementsInitialization()
     modeCfg = new ModeCfg();
     modeCfg->setUsageCheckbox(ui->checkBox);
     modeCfg->setPositionCombox(ui->comboBox);
+    modeCfg->setActiveBlockCombox(ui->comboBox_2);
     modeCfg->setDisable();
+    //ui->checkBox->setEnabled(true);
 // Инициализация элементов графического отображения расположения блоков
     ui->pushButton->setOrientation(BlockBtn::Horizontal);
     ui->pushButton->setDirectionEnable(true);
@@ -754,33 +958,248 @@ void MainWindow::su2GraphicalElementsInitialization()
     msWidget.setEnable(false);
 // Обработка изменения положения графического отображения блоков устройств
     connect(modeCfg, &ModeCfg::positionChangedSignal, [=](ModeCfg::Positions id){
-        if(id == ModeCfg::Position_Collinear){  // при соосном расположении
+
+        basesWidget.setCheckDisable();
+
+        if(id == ModeCfg::Position_Collinear) {  // при соосном расположении
             msWidget.setEnable(true);
             msWidget.setElementsArrangmentSlot(MasterSlaveWidget::Collinear);
+            msWidget.setBlock1Active();
             setBasesCollinearValues();
+            basesWidget.setCollinearDistance();
             basesWidget.setDisable();
+            basesWidget.setCheckEnable();
+            basesWidget.setBtnEnable();
         } else {
-            if(id == ModeCfg::Position_Parallel){                                     // при параллельном расположении
+            if(id == ModeCfg::Position_Parallel){ // при параллельном расположении
                 msWidget.setEnable(true);
                 msWidget.setElementsArrangmentSlot(MasterSlaveWidget::Parallel);
+                msWidget.setBlock1Active();
                 setBasesParallelValues();
+                basesWidget.setParallelDistance();
                 basesWidget.setDisable();
+                basesWidget.setCheckEnable();
+                basesWidget.setBtnEnable();
             } else {
-                basesWidget.cleanBase1();
-                basesWidget.cleanBase2();
-                basesWidget.cleanBase3();
-                if(id == ModeCfg::Position_Free)
-                    basesWidget.setEnable();
-                msWidget.setEnable(false);                                        // в остальных случаях элемент недоступен
+                if(id == ModeCfg::Position_Collinear_Turn){  // при соосном обратном
+                    msWidget.setEnable(true);
+                    msWidget.setElementsArrangmentSlot(MasterSlaveWidget::CollinearTurn);
+                    msWidget.setBlock1Active();
+                    setBasesCollinearValues();
+                    basesWidget.setCollinearDistance();
+                    basesWidget.setDisable();
+                    basesWidget.setCheckEnable();
+                    basesWidget.setBtnEnable();
+                } else {
+                   /* if(id == ModeCfg::Position_Free) {
+                        basesWidget.setEnable();
+                        basesWidget.setBase1Value(1.0);
+                        basesWidget.setBase2Value(1.0);
+                        basesWidget.setBase3Value(1.0);
+                    } else {*/
+                        basesWidget.cleanBase1();
+                        basesWidget.cleanBase2();
+                        basesWidget.cleanBase3();
+                  //  }
+                    basesWidget.cleanDistance();
+                    msWidget.setBlocksInnactive();
+                    msWidget.setEnable(false);
+                }
+                                                        // в остальных случаях элемент недоступен
             }
         }
     });
+// Обработка активации первого блока на графическойм элементе
+    connect(&msWidget, &MasterSlaveWidget::block1ActivateSignal, [=]{
+        modeCfg->setActiveBlock1();
+    });
+// Обработка активации второго блока на графическойм элементе
+    connect(&msWidget, &MasterSlaveWidget::block2ActivateSignal, [=]{
+        modeCfg->setActiveBlock2();
+    });
+// Обработка выбора блока в комбобоксе
+    connect(modeCfg, &ModeCfg::activeBlockChangedSignal, [=](int index){
+       if(index == 0)
+           msWidget.setBlock1Active();
+       if(index == 1)
+           msWidget.setBlock2Active();
+    });
+// Обработка чекбокса
+    connect(modeCfg, &ModeCfg::checkBoxSignal, [=](int state){
+        if(state == Qt::Checked){
+            basesWidget.setBtnEnable();
+        }  else {
+            basesWidget.setDisable();
+            basesWidget.setBtnDisable();
+        }
+    });
+// Обработка нажатия кнопки "Ввод вручную"
+    connect(&basesWidget, &BasesWidget::manualBtnSignal, [=]{
+        BasesManualWindow::BASESINFO info = {ui->comboBox->currentText(),
+                                             basesWidget.getBase1Value(),
+                                             basesWidget.getBase2Value(),
+                                             basesWidget.getBase3Value()};
+
+        basesManualWindow->startWindow(info);
+    });
+// Обработка установки значений при вводе их в окне "Ввода баз вручную"
+    connect(basesManualWindow, &BasesManualWindow::setBasesValues, [=](BasesManualWindow::BASESINFO vals){
+        basesWidget.setBase1Value(vals.base1);
+        basesWidget.setBase2Value(vals.base2);
+        basesWidget.setBase3Value(vals.base3);
+        if(modeCfg->getMode().position == ModeCfg::Position_Parallel)
+            basesWidget.setParallelDistance();
+        else
+            if((modeCfg->getMode().position == ModeCfg::Position_Collinear) || (modeCfg->getMode().position == ModeCfg::Position_Collinear_Turn)){
+                basesWidget.setCollinearDistance();
+            } else
+                basesWidget.cleanDistance();
+    });
+// Обработка запроса пользователя на начало калибровки
+    connect(basesManualWindow, &BasesManualWindow::startCalibration, [=]{
+        bcp2->startAutocalibrateRequest();
+    });
+// Обработка запроса пользователя на отмену калибровки
+    connect(basesManualWindow, &BasesManualWindow::cancelCalibration, [=]{
+        bcp2->cancelAutocalibrateRequest();
+    });
+// Обработка подтвеждения начала калибровки
+    connect(bcp2, &Bcp2::receiveCalibrationStartSignal, [=]{
+        emit basesManualWindow->startCalibrationConfirm();
+    });
+// Обработка подтверждения отмены калибровки
+    connect(bcp2, &Bcp2::receiveCalibrationCancelSignal, [=]{
+       emit basesManualWindow->cancelCalibrationConfirm();
+    });
+// Обработка окончания калибровки
+    connect(bcp2, &Bcp2::receiveCalibrationOk, [=](Bcp2::CALIBRATION data){
+        basesWidget.setBase1Value(static_cast<double>(data.ant.base1LenMm/1000.));
+        basesWidget.setBase2Value(static_cast<double>(data.ant.base2LenMm/1000.));
+        basesWidget.setBase3Value(static_cast<double>(data.ant.base3LenMm/1000.));
+        if(modeCfg->getMode().position == ModeCfg::Position_Parallel)
+            basesWidget.setParallelDistance();
+        else{
+            if((modeCfg->getMode().position == ModeCfg::Position_Collinear) || (modeCfg->getMode().position == ModeCfg::Position_Collinear_Turn)){
+                basesWidget.setCollinearDistance();
+            } else {
+                basesWidget.cleanDistance();
+            }
+        }
+        if(ui->ProtocolLabel->text().compare("BINR") == 0) {  // если текущий протокол BINR)
+           bcp2->workModeRequest();
+        } else {
+           bcp2->workModeRequest(Bcp2::Address_NAP);
+        }
+        //bcp2->antennaCfgRequest();
+        //! \todo что-то делать с данными курса, дифферента и крена
+        basesManualWindow->endCalibration();
+    });
+// Обработка запроса статуса соединения со вторым блоком
+    connect(basesManualWindow, &BasesManualWindow::connectionStatusRequestSignal, [=]{
+       bcp2->testResultsRequest();
+    });
+// Обработка получение ответа на запрос тестов
+    connect(bcp2, &Bcp2::receiveTestResultSignal, [=](Bcp2::TESTSRESULT test){
+        basesManualWindow->connectionStatus(test.connection);
+    });
+// Обработка запроса статуса калибровки
+    connect(basesManualWindow, &BasesManualWindow::requestCalibrationStatusSignal, [=]{
+        //bcp2->floatSolutionRequest(/*Bcp2::SolutionBaseLine_1 | Bcp2::SolutionBaseLine_2 |*/ Bcp2::SolutionBaseLine_4);
+        if(!sendFloatSol[0]){
+            bcp2->floatSolutionRequest(Bcp2::SolutionBaseLine_1);
+            sendFloatSol[0] = true;
+        } else {
+            if(!sendFloatSol[1]){
+                bcp2->floatSolutionRequest(Bcp2::SolutionBaseLine_2);
+                sendFloatSol[1] = true;
+            } else {
+                if(!sendFloatSol[2]){
+                    bcp2->floatSolutionRequest(Bcp2::SolutionBaseLine_3);
+                    sendFloatSol[2] = true;
+                }
+            }
+
+        }
+    });
+// Обработка приёма данных плавающего решения
+    connect(bcp2, &Bcp2::receiveFloatSolutionSignal, [=](Bcp2::FLOATSOLUTION solution){
+        static bool base1 = false,
+                    base2 = false,
+                    base3 = false;
+        static int  base1Val = 0,
+                    base2Val = 0,
+                    base3Val = 0;
+
+        if(solution.numBase == 0){
+            sendFloatSol[1] = false;
+            if(!base1){
+                base1    = true;
+                base2    = false;
+                if(int(solution.fisherLimite[0] * 1000) > 0){
+                  base1Val = ((int(1000* solution.fisherLimite[0]) - (int(1000 * solution.fisherStatistic[0]) % int(1000* solution.fisherLimite[0]))) * 100) / int(1000* solution.fisherLimite[0]);
+                  base1Val /= 3;
+                } else {
+                    if((int(solution.fisherLimite[0]) == 0) && (int(solution.fisherStatistic[0]) == 0)){
+                        base1Val = 33;
+                    }
+                }
+            }
+        }
+
+        if((solution.numBase == 1) && !base2){
+          sendFloatSol[2] = false;
+          if(!base2){
+              base2    = true;
+              base3    = false;
+              if(int(solution.fisherLimite[0] * 1000) > 0){
+                base2Val = ((int(1000* solution.fisherLimite[0]) - (int(1000 * solution.fisherStatistic[0]) % int(1000* solution.fisherLimite[0]))) * 100) / int(1000* solution.fisherLimite[0]);
+                base2Val /= 3;
+              } else {
+                  if((int(solution.fisherLimite[0]) == 0) && (int(solution.fisherStatistic[0]) == 0)){
+                      base2Val = 33;
+                  }
+               }
+          }
+        }
+
+        if((solution.numBase == 2) && !base3){
+          sendFloatSol[0] = false;
+          if(!base3){
+              base3    = true;
+              base1    = false;
+              if(int(solution.fisherLimite[0] * 1000) > 0){
+                base3Val = ((int(1000* solution.fisherLimite[0]) - (int(1000 * solution.fisherStatistic[0]) % int(1000* solution.fisherLimite[0]))) * 100) / int(1000* solution.fisherLimite[0]);
+                base3Val /= 3;
+                basesManualWindow->calibrationStatus(base1Val + base2Val + base3Val);
+              } else{
+                  if((int(solution.fisherLimite[0]) == 0) && (int(solution.fisherStatistic[0]) == 0)){
+                      base3Val = 33;
+                      basesManualWindow->calibrationStatus(base1Val + base2Val + base3Val);
+                  }
+               }
+          }
+        }
+    });
+    connect(basesManualWindow, &BasesManualWindow::requestBlockTypeSignal,[=](bool sign){
+        ModeCfg::MODECFG cfg = modeCfg->getMode();
+
+        cfg.slaveForwardSign = sign;
+        trySetWorkMode(cfg);
+    });
+// Обработка приёма данных фиксированного решения
+    /*connect(bcp2, &Bcp2::receiveFixSolutionSignal, [=](Bcp2::FIXSOLUTION solution){
+        int i = 0;
+        i = 1;
+    });*/
 }
 /*!
  * \brief     Инициализация элементов и логики графических элементов для отображения информации о базах (ЗАКРЫТЫЙ МЕТОД)
  ***********************************************************************************/
 void MainWindow::su2BasesElementsInitialization()
 {
+    basesWidget.setManualButton(ui->BaseManualBtn);
+    basesWidget.setManualCheckbox(ui->checkBox_2);
+    basesWidget.setManualLineedit(ui->lineEdit);
     basesWidget.setBase1(ui->Base1LineEdit);
     basesWidget.setBase2(ui->Base2LineEdit);
     basesWidget.setBase3(ui->Base3LineEdit);
@@ -819,4 +1238,43 @@ void MainWindow::dbgInitialization()
     setMinimumWidth(730);
     setMaximumWidth(730);
 #endif
+}
+
+/*!
+ * \brief     Получение значения темпа решения по значению индекса комбобокса
+ * \param[in] Значение индекса комбобкса в соответствии и индексаи SolutionTempCbox
+ ***********************************************************************************/
+int MainWindow::getSolutionTempByCboxIndex(int index)
+{
+    int temp = 0;
+    switch(index) {
+      case 0: temp = 1;
+        break;
+      case 1: temp = 2;
+        break;
+      case 2: temp = 5;
+        break;
+      case 3: temp = 10;
+        break;
+      default:;
+    }
+    return temp;
+}
+
+/*!
+ * \brief     Попытка изменить настройки темпа решения (ЗАКРЫТЫЙ МЕТОД)
+ ************************************************************************************/
+void MainWindow::tryChangeSolutionTemp()
+{
+    if(updateSolutionTempCbox){
+
+        updateSolutionTempCbox = false;
+        int temp = getSolutionTempByCboxIndex(ui->SolutionTempCbox->currentIndex());
+        if(temp){
+          if(ui->ProtocolLabel->text().compare("BINR") == 0)  // если текущий протокол BINR
+              bcp2->setSolutionTempRequest(temp);
+          else
+              bcp2->setSolutionTempRequest(Bcp2::Address_NAP, temp);
+        }
+    }
 }

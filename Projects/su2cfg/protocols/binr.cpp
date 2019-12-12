@@ -1,5 +1,6 @@
 #include "binr.h"
 
+//! \brief Таблица для подсчёта CRC
 static unsigned short Table_CRC[256]={
 0x0000,0x1021,0x2042,0x3063,0x4084,0x50A5,0x60C6,0x70E7,0x8108,0x9129,0xA14A,
 0xB16B,0xC18C,0xD1AD,0xE1CE,0xF1EF,0x1231,0x0210,0x3273,0x2252,0x52B5,0x4294,
@@ -26,13 +27,22 @@ static unsigned short Table_CRC[256]={
 0xCF5D,0xDF7C,0xAF9B,0xBFBA,0x8FD9,0x9FF8,0x6E17,0x7E36,0x4E55,0x5E74,0x2E93,
 0x3EB2,0x0ED1,0x1EF0};
 
+//! Функция добавления CRC
+//! \todo Необходимо внести в класс
 static void add_CRC(unsigned short& crc, unsigned char c);
-
+/*!
+ * \brief  Конструктор по умолчанию
+ ***********************************************************************************/
 Binr::Binr()
 {
     reset();
 }
-
+/*!
+ * \brief     Распаковщик BINR
+ * \param[in] байт данных
+ * \return    true - в процессе разбора был выделен целый пакет BINR
+ * \todo      возможно стоит переделать на сигнал, то есть генерируется сигнал при успешном разборе
+ ***********************************************************************************/
 bool Binr::decode(unsigned char data)
 {
     char           prev = 0;
@@ -123,12 +133,18 @@ bool Binr::decode(unsigned char data)
 
     return false;
 }
-
+/*!
+ * \brief     Упаковщик BINR
+ * \param[in] значение которое будет подставлено в поле идентификатора пакета
+ * \remark    для того чтобы добавить данные в пакет необходимо воспользоваться функцией \ref putDataInNextPkg
+ * \return    массив данных представленных в виде BINR пакета
+ ***********************************************************************************/
 QByteArray Binr::encode(unsigned char id)
 {
   QByteArray ret;
 
   ret += 0x10;
+  lastEndcodeId = id;
   ret += char(id);
   if(outputDataStatus){
       for(int i = 0; i < outputData.size(); i++){
@@ -153,7 +169,9 @@ QByteArray Binr::encode(unsigned char id)
 
   return ret;
 }
-
+/*!
+ * \brief     Сброс машины состояния разборщика
+ ***********************************************************************************/
 void       Binr::reset()
 {
     errStatus       = false;
@@ -162,46 +180,84 @@ void       Binr::reset()
     decoderState    = 0;
     crcStatus       = false;
 }
-
+/*!
+ * \brief     Включение/отключение CRC
+ * \remark    актуально только для упаковщика так как распаковщик автоматически определяет наличие CRC
+ * \param[in] true - CRC включено, false - отключено
+ ***********************************************************************************/
 void Binr::crcEnable(bool state)
 {
-    reset();
+    //reset(); // BugFix зло для мультипоточности.. если в разных потоках вызывается упаковщик и распаковщик
     crcStatus = state;
 }
-
+/*!
+ * \brief     Метод для добавления данных в следующий сформированный пакет BINR
+ * \param[in] массив данных которые будут включены в следующий сформированный пакет BINR
+ ***********************************************************************************/
 void          Binr::putDataInNextPkg(QByteArray data)
 {
     outputData       = data;
     outputDataStatus = true;
 }
-
+/*!
+ * \brief     Получения массива байт поля данных из последнего разобранного пакета BINR
+ * \return    массив байт поля данных из последнего разобранного пакета BINR
+ * \todo      Возможно стоит заменить данными передаваемыми в составе сигнала
+ ***********************************************************************************/
 unsigned char Binr::getLastDecodePkgId() const
 {
     return lastDecodePkgId;
 }
-
+/*!
+ * \brief     Получение идентификатора последнего разобранного пакета BINR
+ * \return    идентификатор последнего разобранного пакета BINR
+ * \todo      Возможно стоит заменить данными передаваемыми в составе сигнала
+ ***********************************************************************************/
 bool   Binr::getErrorStatus() const
 {
     bool ret = errStatus;
     errStatus = false;
     return ret;
 }
-
+/*!
+ * \brief     Получение статуса ошибки
+ * \return    true - если была обнаружена ошибка
+ * \todo      Возможно стоит заменить сигналом
+ ***********************************************************************************/
 BINR_ERR   Binr::getLastError() const
 {
     return lastErrorId;
 }
-
+/*!
+ * \brief     Получение идентификатора последней ошибки
+ * \return    идентификатор ошибки
+ * \todo      Возможно стоит заменить данными передаваемыми в составе сигнала
+ ***********************************************************************************/
 bool Binr::getCrcStatus() const
 {
     return crcStatus;
 }
-
+/*!
+ * \brief     Получение идентификатора последнего созданного опакета BINR
+ * \return    идентификатор последнего созданного пакета
+ ***********************************************************************************/
+unsigned char Binr::getLastEncodeId() const
+{
+    return lastEndcodeId;
+}
+/*!
+ * \brief     Получение статуса CRC
+ * \return    true - CRC включено, false - отключено
+ * \todo      Возможно стоит упразднить
+ ***********************************************************************************/
 QByteArray    Binr::getDataFromLastPkg(void)
 {
     return cleanInputData;
 }
-
+/* Закрытые методы */
+/*!
+ * \brief     Убирает двойные десятки из поля данных последнего полученного пакета BINR
+ ***********************************************************************************/
 void          Binr::makeCleanData()
 {
     cleanInputData.clear();
@@ -213,7 +269,7 @@ void          Binr::makeCleanData()
     }
 }
 
-
+//! \todo внести в состав класса
 static void add_CRC(unsigned short &crc, unsigned char c)
 {
   unsigned short cval = ((crc>>8)^c)&0xff;

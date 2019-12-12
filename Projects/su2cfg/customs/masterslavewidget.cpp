@@ -9,6 +9,8 @@ MasterSlaveWidget::MasterSlaveWidget()
 {
     masterBtn = nullptr;
     slaveBtn  = nullptr;
+    masterActive = false;
+    arrangment = MaxArrangment;
 }
 /*!
  * \brief     Инициализация графического элемента (спец. кнопки) для СУ-М
@@ -20,7 +22,11 @@ void MasterSlaveWidget::setMasterElement(BlockBtn *master)
         masterBtn = master;
         masterBtn->setStyleSheet(STYLE_SETTINGS);
         connect(masterBtn, &QPushButton::clicked, [=]{
-            masterBtn->toggleDirection();
+            if(arrangment == Parallel)
+              setBlock1Active();
+            else {
+              setBlock2Active();
+            }
         });
     }
 }
@@ -34,7 +40,11 @@ void MasterSlaveWidget::setSlaveElement(BlockBtn *master)
         slaveBtn = master;
         slaveBtn->setStyleSheet(STYLE_SETTINGS);
         connect(slaveBtn, &QPushButton::clicked, [=]{
-            slaveBtn->toggleDirection();
+            if(arrangment == Parallel)
+              setBlock2Active();
+            else {
+              setBlock1Active();
+            }
         });
     }
 }
@@ -78,17 +88,95 @@ void MasterSlaveWidget::swapElementsSlot()
 void MasterSlaveWidget::setElementsArrangmentSlot(Arrangment arrangment)
 {
     if(this->arrangment != arrangment){
+        /*if(((this->arrangment == Collinear) || (this->arrangment == CollinearTurn)) && (arrangment == Parallel) && (masterActive == true)){
+            masterActive = false;
+        } else {
+            if(((this->arrangment == Collinear) || (this->arrangment == CollinearTurn)) && ((arrangment == Collinear) || (arrangment == CollinearTurn)) && (!masterActive)){
+                masterActive = true;
+            }
+        }*/
+        masterActive = false;
         this->arrangment = arrangment;
         switch(arrangment){
             case Collinear:
               masterBtn->setOrientation(BlockBtn::Horizontal);
+              masterBtn->setDirection(BlockBtn::Left);
               slaveBtn->setOrientation(BlockBtn::Horizontal);
+              slaveBtn->setDirection(BlockBtn::Left);
+            break;
+            case CollinearTurn:
+              masterBtn->setOrientation(BlockBtn::Horizontal);
+              masterBtn->setDirection(BlockBtn::Right);
+              slaveBtn->setOrientation(BlockBtn::Horizontal);
+              slaveBtn->setDirection(BlockBtn::Left);
             break;
             case Parallel:
+             // setBlocksInnactive();
               masterBtn->setOrientation(BlockBtn::Vertical);
+              masterBtn->setDirection(BlockBtn::Up);
               slaveBtn->setOrientation(BlockBtn::Vertical);
+              slaveBtn->setDirection(BlockBtn::Up);
             break;
-            default:;
+            default: setBlocksInnactive();
         }
     }
+}
+/*!
+ * \brief     Выделить изображение первого блока
+ ***********************************************************************************/
+void MasterSlaveWidget::setBlock1Active()
+{
+    if((arrangment == CollinearTurn) || (arrangment == Collinear))
+    {
+        if(!masterActive){
+            masterActive = true;
+            masterBtn->setStyleSheet(STYLE_SETTINGS);
+            slaveBtn->setStyleSheet(STYLE_SETTINGS_BOLD_BORDER);
+            emit block1ActivateSignal();
+
+        }
+    } else {
+        if(arrangment == Parallel){
+            if(!masterActive){
+                masterActive = true;
+                masterBtn->setStyleSheet(STYLE_SETTINGS_BOLD_BORDER);
+                slaveBtn->setStyleSheet(STYLE_SETTINGS);
+                emit block1ActivateSignal();
+            }
+        }
+    }
+}
+/*!
+ * \brief     Выделить изображение второго блока
+ ***********************************************************************************/
+void MasterSlaveWidget::setBlock2Active()
+{
+    if((arrangment == CollinearTurn) || (arrangment == Collinear))
+    {
+        if(masterActive){
+
+            masterActive = false;
+            masterBtn->setStyleSheet(STYLE_SETTINGS_BOLD_BORDER);
+            slaveBtn->setStyleSheet(STYLE_SETTINGS);
+            emit block2ActivateSignal();
+        }
+    } else {
+        if(arrangment == Parallel){
+            if(masterActive){
+                masterActive = false;
+                masterBtn->setStyleSheet(STYLE_SETTINGS);
+                slaveBtn->setStyleSheet(STYLE_SETTINGS_BOLD_BORDER);
+                emit block2ActivateSignal();
+            }
+        }
+    }
+}
+/*!
+ * \brief     Снять выделение изображений обоих блоков
+ ***********************************************************************************/
+void MasterSlaveWidget::setBlocksInnactive()
+{
+    masterBtn->setStyleSheet(STYLE_SETTINGS);
+    slaveBtn->setStyleSheet(STYLE_SETTINGS);
+    masterActive = false;
 }
