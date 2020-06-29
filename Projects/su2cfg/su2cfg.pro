@@ -1,6 +1,6 @@
 #-------------------------------------------------
 #
-# Project created by QtCreator 2019-09-11T11:46:04
+# Project created by QtCreator 2019-10-23T11:59:43
 #
 #-------------------------------------------------
 
@@ -9,7 +9,7 @@ QT       += core gui \
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
-TARGET = su2cfg
+TARGET   = su2cfg
 TEMPLATE = app
 
 # The following define makes your compiler emit warnings if you use
@@ -26,40 +26,69 @@ DEFINES += QT_DEPRECATED_WARNINGS
 CONFIG += c++11
 
 SOURCES += \
-        baseswidget.cpp \
-        bcp2.cpp \
-        binr.cpp \
-        blockbtn.cpp \
-        cbytearraytextedit.cpp \
-        comport.cpp \
-        customdoublevalidator.cpp \
+        customs/baseswidget.cpp \
+        customs/blockbtn.cpp \
+        customs/cbytearraytextedit.cpp \
+        customs/comport.cpp \
+        customs/customdoublevalidator.cpp \
+        customs/masterslavewidget.cpp \
+        customs/modecfg.cpp \
         main.cpp \
-        mainwindow.cpp \
-        masterslavewidget.cpp \
-        modecfg.cpp \
-        nmea.cpp \
-        nmeabase.cpp
+        protocols/bcp2.cpp \
+        protocols/binr.cpp \
+        protocols/nmea.cpp \
+        protocols/nmeabase.cpp \
+        windows/additionalsetswindow.cpp \
+        windows/basesmanualwindow.cpp \
+        windows/infowindow.cpp \
+        windows/mainwindow.cpp \
+        windows/progresswindow.cpp
 
 HEADERS += \
-        baseswidget.h \
-        bcp2.h \
-        binr.h \
-        blockbtn.h \
-        cbytearraytextedit.h \
-        comport.h \
-        customdoublevalidator.h \
-        mainwindow.h \
-        masterslavewidget.h \
-        modecfg.h \
-        nmea.h \
-        nmeabase.h
+    customs/baseswidget.h \
+    customs/blockbtn.h \
+    customs/cbytearraytextedit.h \
+    customs/comport.h \
+    customs/customdoublevalidator.h \
+    customs/masterslavewidget.h \
+    customs/modecfg.h \
+    protocols/bcp2.h \
+    protocols/binr.h \
+    protocols/nmea.h \
+    protocols/nmeabase.h \
+    windows/additionalsetswindow.h \
+    windows/basesmanualwindow.h \
+    windows/infowindow.h \
+    windows/mainwindow.h \
+    windows/progresswindow.h
 
 FORMS += \
-        mainwindow.ui
+    forms/additionsetswindow.ui \
+    forms/basesmanualwindow.ui \
+    forms/infowindow.ui \
+    forms/mainwindow.ui \
+    forms/progresswindow.ui
 
-#QMAKE_LFLAGS += -static -static-libgcc #- Для статической сборки только
+UNITTEST{
 
+QT      += testlib
+
+SOURCES += tests/bcp2classtests.cpp \
+           tests/binrunittests.cpp
+
+HEADERS += tests/bcp2classtests.h \
+           tests/binrunittests.h
+}
+
+STATIC{
+
+QMAKE_LFLAGS += -static -static-libgcc
+
+}
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
 else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
+
+RESOURCES += \
+    resources/res.qrc
