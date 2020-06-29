@@ -1,7 +1,9 @@
 #include "MainOpenGL.h"
 #include "MainController.h"
 #include "resource.h"
+#include <thread>
 
+static void loop_thread(bool *quit, void *ptr);
 
 int WINAPI WinMain( HINSTANCE hInstance,
 	HINSTANCE hPrevInstance,
@@ -28,11 +30,26 @@ int WINAPI WinMain( HINSTANCE hInstance,
 		          16 ) )
 		return app.exit();
 
-	app.setBackground(1.0, 0.8, 0.5, 0.0);
+	app.setBackground(0.0, 0.0, 0.0, 0.0);
+
+	bool quit = false;
+	std::thread loop( loop_thread , &quit, (void*)&app);
 
 	while( app.run() );
-
-
+	quit = true;
+	loop.join();
 
 	return app.exit();
+}
+
+static void loop_thread( bool *quit, void* ptr )
+{
+	MainOpenGL *app = (MainOpenGL*)ptr;
+
+	while( !(*quit) )
+	{
+		if( app->getAutoControl() )
+		  app->switchPrimitives();
+		std::this_thread::sleep_for(std::chrono::seconds(1));
+	}
 }

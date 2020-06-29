@@ -2,6 +2,8 @@
 #include <gl/GL.h>
 #include <gl/GLU.h>
 
+WPARAM MainController::LastKeyDown = 0;
+
 MainController::MainController()
 {}
 
@@ -42,10 +44,19 @@ LRESULT CALLBACK MainController::callback( HWND hWnd, UINT msg, WPARAM wPrm, LPA
 
 void MainController::keyDownHndl( WPARAM key )
 {
+	LastKeyDown = key;
 	switch( key )
 	{
 	  case VK_ESCAPE:
 		  PostQuitMessage(0);
 	  break;
 	}
+
+}
+
+WPARAM  MainController::getLastKeyDown()
+{
+  WPARAM ret = LastKeyDown;
+  LastKeyDown = 0;
+  return ret;
 }

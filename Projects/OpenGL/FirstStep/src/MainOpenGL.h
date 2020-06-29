@@ -1,6 +1,8 @@
 #pragma once
 
 #include "MainWindow.h"
+#include <gl/GL.h>
+#include <gl/GLU.h>
 
 class MainOpenGL : public MainWindow {
   public:
@@ -9,8 +11,16 @@ class MainOpenGL : public MainWindow {
 	  void setBackground(double r, double g, double b, double a );
 	  bool run();
 	  WPARAM exit();
+	  void switchPrimitives();
+	  bool getAutoControl();
   private:
 	  HDC   g_hDC;
 	  HGLRC g_hRC;
 	  PIXELFORMATDESCRIPTOR pxFormatDesc;
+	  bool g_bRenderInWireFrame;
+	  GLenum g_currentPrimitive;
+	  bool autoControl;
+
+	  void checkController();
+	  void drawPrimitive();
 };
