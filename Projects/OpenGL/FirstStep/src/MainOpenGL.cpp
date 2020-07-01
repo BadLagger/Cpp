@@ -1,4 +1,5 @@
 #include "MainOpenGL.h"
+#include "Vertex.h"
 
 MainOpenGL::MainOpenGL( std::string name, HINSTANCE hInst ) 
 	: MainWindow( name , hInst ),
@@ -101,7 +102,7 @@ void MainOpenGL::checkController()
 
 void MainOpenGL::drawPrimitive()
 {
-	struct Vertex
+	/*struct VerteX
 	{
 		unsigned char r, g, b, a;
 		float x, y, z;
@@ -112,7 +113,7 @@ void MainOpenGL::drawPrimitive()
 		{0,   0,   255, 255,  0.5f,  0.5f, 0.0f},
 		{255, 255, 0,   255,  0.0f,  1.5f, 0.0f},
 		{255, 0,   255, 255, -0.5f,  0.5f, 0.0f},
-	},
+	};,
 	g_quadStrip[] = {
 		{255, 0,   0,   255, -0.5f, -1.5f, 0.0f},
 		{0,   255, 0,   255,  0.5f, -1.5f, 0.0f},
@@ -191,7 +192,17 @@ void MainOpenGL::drawPrimitive()
 	    { 255, 255,   0, 255,  0.0f, 1.0f, 0.0f },
 	    {   0,   0, 255, 255, -0.5f, 0.5f, 0.0f },
 	    {   0, 255,   0, 255, -1.0f, 0.0f, 0.0f }
+	};*/
+
+	Vertex v_polygon[ 5 ] = {
+		{ new Vertex( new ColorRGBA( 100, 100, 100, 255 ), new CoordXYZ( -0.3, -1.5, 0. ) ) },
+		{ new Vertex( new ColorRGBA( 100, 0, 0, 255 ),     new CoordXYZ(  0.3, -1.5, 0. ) ) },
+		{ new Vertex( new ColorRGBA( 100, 100, 100, 255 ), new CoordXYZ(  0.5,  0.5, 0. ) ) },
+		{ new Vertex( new ColorRGBA( 100, 0, 0, 255 ),     new CoordXYZ(  0.0,  1.5, 0. ) ) },
+		{ new Vertex( new ColorRGBA( 100, 0, 0, 255 ),     new CoordXYZ( -0.5,  0.5, 0. ) ) }
 	};
+
+
 
 	glMatrixMode( GL_MODELVIEW );
 	glLoadIdentity();
@@ -200,10 +211,23 @@ void MainOpenGL::drawPrimitive()
 	switch( g_currentPrimitive )
 	{
 	  case GL_POLYGON:
+	  {
+		  unsigned long g_polygon[20];
+		  unsigned long count = 0;
+		  for( auto vertex : v_polygon ){ 
+			  g_polygon[ count++ ] = vertex.getColor().getInUlong();
+			  float ftmp = vertex.getCoord().getX();
+			  g_polygon[ count++ ] = *( reinterpret_cast<unsigned long* >(&ftmp));
+			  ftmp = vertex.getCoord().getY();
+			  g_polygon[ count++ ] = *( reinterpret_cast< unsigned long* >( &ftmp ) );
+			  ftmp = vertex.getCoord().getZ();
+			  g_polygon[ count++ ] = *( reinterpret_cast< unsigned long* >( &ftmp ) );
+		  }
 		  glInterleavedArrays( GL_C4UB_V3F, 0, g_polygon );
-		  glDrawArrays( GL_POLYGON, 0, 5);
+		  glDrawArrays( GL_POLYGON, 0, 5 );
 		  break;
-	  case GL_QUAD_STRIP:
+	  }
+	 /* case GL_QUAD_STRIP:
 		  glInterleavedArrays( GL_C4UB_V3F, 0, g_quadStrip );
 		  glDrawArrays( GL_QUAD_STRIP, 0, 8 );
 		  break;
@@ -238,13 +262,13 @@ void MainOpenGL::drawPrimitive()
 	  case GL_TRIANGLE_FAN:
 		  glInterleavedArrays( GL_C4UB_V3F, 0, g_trianleFan );
 		  glDrawArrays( GL_TRIANGLE_FAN, 0, 6 );
-		  break;
+		  break;*/
 	}
 }
 
 void MainOpenGL::switchPrimitives()
 {
-	if( g_currentPrimitive == GL_POLYGON )
+	/*if( g_currentPrimitive == GL_POLYGON )
 		g_currentPrimitive = GL_QUAD_STRIP;
 	else if( g_currentPrimitive == GL_QUAD_STRIP )
 		g_currentPrimitive = GL_QUADS;
@@ -263,7 +287,7 @@ void MainOpenGL::switchPrimitives()
 	else if( g_currentPrimitive == GL_TRIANGLE_STRIP )
 		g_currentPrimitive = GL_TRIANGLE_FAN;
 	else if( g_currentPrimitive == GL_TRIANGLE_FAN )
-		g_currentPrimitive = GL_POLYGON;
+		g_currentPrimitive = GL_POLYGON;*/
 }
 
 bool MainOpenGL::getAutoControl()

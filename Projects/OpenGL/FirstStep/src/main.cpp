@@ -33,11 +33,11 @@ int WINAPI WinMain( HINSTANCE hInstance,
 	app.setBackground(0.0, 0.0, 0.0, 0.0);
 
 	bool quit = false;
-	std::thread loop( loop_thread , &quit, (void*)&app);
+	//std::thread loop( loop_thread , &quit, (void*)&app);
 
 	while( app.run() );
 	quit = true;
-	loop.join();
+	//loop.join();
 
 	return app.exit();
 }

@@ -140,6 +140,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="src\ColorRGBA.h" />
+    <ClInclude Include="src\CoordXYZ.h" />
     <ClInclude Include="src\MainController.h" />
     <ClInclude Include="src\MainOpenGL.h" />
     <ClInclude Include="src\MainWindow.h" />
@@ -147,10 +149,13 @@
     <ClInclude Include="src\Vertex.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\ColorRGBA.cpp" />
+    <ClCompile Include="src\CoordXYZ.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\MainController.cpp" />
     <ClCompile Include="src\MainOpenGL.cpp" />
     <ClCompile Include="src\MainWindow.cpp" />
+    <ClCompile Include="src\Vertex.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
