@@ -7,7 +7,6 @@ class ColorRGBA{
       ColorRGBA();
       ColorRGBA( unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha );
       ColorRGBA( unsigned char red, unsigned char green, unsigned char blue );
-     // ColorRGBA( float red, float green, float blue, float alpha );
       ColorRGBA( float red, float green, float blue);
       void set( unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha );
       void set( unsigned char red, unsigned char green, unsigned char blue );

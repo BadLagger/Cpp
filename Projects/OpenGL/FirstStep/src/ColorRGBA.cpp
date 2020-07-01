@@ -18,14 +18,6 @@ ColorRGBA::ColorRGBA( unsigned char red, unsigned char green, unsigned char blue
 
 }
 
-/*ColorRGBA::ColorRGBA( float red, float green, float blue, float alpha )
-{
-	r = floatToUchar( red );
-	g = floatToUchar( green );
-	b = floatToUchar( blue );
-	a = floatToUchar( alpha );
-}*/
-
 ColorRGBA::ColorRGBA( float red, float green, float blue ) 
 	: a(0)
 {

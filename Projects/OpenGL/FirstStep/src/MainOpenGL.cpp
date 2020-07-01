@@ -1,5 +1,4 @@
 #include "MainOpenGL.h"
-#include "Vertex.h"
 
 MainOpenGL::MainOpenGL( std::string name, HINSTANCE hInst ) 
 	: MainWindow( name , hInst ),
@@ -194,12 +193,26 @@ void MainOpenGL::drawPrimitive()
 	    {   0, 255,   0, 255, -1.0f, 0.0f, 0.0f }
 	};*/
 
-	Vertex v_polygon[ 5 ] = {
-		{ new Vertex( new ColorRGBA( 100, 100, 100, 255 ), new CoordXYZ( -0.3, -1.5, 0. ) ) },
-		{ new Vertex( new ColorRGBA( 100, 0, 0, 255 ),     new CoordXYZ(  0.3, -1.5, 0. ) ) },
-		{ new Vertex( new ColorRGBA( 100, 100, 100, 255 ), new CoordXYZ(  0.5,  0.5, 0. ) ) },
-		{ new Vertex( new ColorRGBA( 100, 0, 0, 255 ),     new CoordXYZ(  0.0,  1.5, 0. ) ) },
-		{ new Vertex( new ColorRGBA( 100, 0, 0, 255 ),     new CoordXYZ( -0.5,  0.5, 0. ) ) }
+	static ColorRGBA darkRed ( 100, 0, 0, 255 );
+	static ColorRGBA midGrey ( 100, 100, 100, 255 );
+	static ColorRGBA midFeo ( 108, 24, 158, 255 );
+
+	static std::vector< Vertex > v_polygon = {
+		{ new Vertex( midGrey, new CoordXYZ( -0.3, -1.5, 0. ) ) },
+		{ new Vertex( darkRed, new CoordXYZ(  0.3, -1.5, 0. ) ) },
+		{ new Vertex( midGrey, new CoordXYZ(  0.5,  0.5, 0. ) ) },
+		{ new Vertex( darkRed, new CoordXYZ(  0.0,  1.5, 0. ) ) },
+		{ new Vertex( darkRed, new CoordXYZ( -0.5,  0.5, 0. ) ) }
+	},
+		v_quadStrip = {
+		{ new Vertex( darkRed, new CoordXYZ( -0.5f, -1.5f, 0.0f ) ) },
+		{ new Vertex( midGrey, new CoordXYZ( 0.5f, -1.5f, 0.0f ) ) },
+		{ new Vertex( midFeo,  new CoordXYZ( -0.2f, -0.5f, 0.0f ) ) },
+		{ new Vertex( midGrey, new CoordXYZ( 0.2f, -0.5f, 0.0f ) ) },
+		{ new Vertex( darkRed, new CoordXYZ( -0.5f,  0.5f, 0.0f ) ) },
+		{ new Vertex( midGrey, new CoordXYZ( 0.5f,  0.5f, 0.0f ) ) },
+		{ new Vertex( midFeo,  new CoordXYZ( -0.4f,  1.5f, 0.0f ) ) },
+		{ new Vertex( midGrey, new CoordXYZ( 0.4f,  1.5f, 0.0f ) ) },
 	};
 
 
@@ -211,27 +224,12 @@ void MainOpenGL::drawPrimitive()
 	switch( g_currentPrimitive )
 	{
 	  case GL_POLYGON:
-	  {
-		  unsigned long g_polygon[20];
-		  unsigned long count = 0;
-		  for( auto vertex : v_polygon ){ 
-			  g_polygon[ count++ ] = vertex.getColor().getInUlong();
-			  float ftmp = vertex.getCoord().getX();
-			  g_polygon[ count++ ] = *( reinterpret_cast<unsigned long* >(&ftmp));
-			  ftmp = vertex.getCoord().getY();
-			  g_polygon[ count++ ] = *( reinterpret_cast< unsigned long* >( &ftmp ) );
-			  ftmp = vertex.getCoord().getZ();
-			  g_polygon[ count++ ] = *( reinterpret_cast< unsigned long* >( &ftmp ) );
-		  }
-		  glInterleavedArrays( GL_C4UB_V3F, 0, g_polygon );
-		  glDrawArrays( GL_POLYGON, 0, 5 );
+		  DrawShape( g_currentPrimitive, v_polygon );
 		  break;
-	  }
-	 /* case GL_QUAD_STRIP:
-		  glInterleavedArrays( GL_C4UB_V3F, 0, g_quadStrip );
-		  glDrawArrays( GL_QUAD_STRIP, 0, 8 );
+	  case GL_QUAD_STRIP:
+		  DrawShape( g_currentPrimitive, v_quadStrip );
 		  break;
-	  case GL_QUADS:
+	 /* case GL_QUADS:
 		  glInterleavedArrays( GL_C4UB_V3F, 0, g_quads );
 		  glDrawArrays( GL_QUADS, 0, 12 );
 		  break;
@@ -268,10 +266,11 @@ void MainOpenGL::drawPrimitive()
 
 void MainOpenGL::switchPrimitives()
 {
-	/*if( g_currentPrimitive == GL_POLYGON )
+	if( g_currentPrimitive == GL_POLYGON )
 		g_currentPrimitive = GL_QUAD_STRIP;
 	else if( g_currentPrimitive == GL_QUAD_STRIP )
-		g_currentPrimitive = GL_QUADS;
+		g_currentPrimitive = GL_POLYGON;
+	/*	g_currentPrimitive = GL_QUADS;
 	else if( g_currentPrimitive == GL_QUADS )
 		g_currentPrimitive = GL_POINTS;
 	else if( g_currentPrimitive == GL_POINTS )
@@ -293,4 +292,21 @@ void MainOpenGL::switchPrimitives()
 bool MainOpenGL::getAutoControl()
 {
   return autoControl;
+}
+
+std::vector<unsigned long> MainOpenGL::ShapeToArray( std::vector<Vertex> &vvertex )
+{
+	std::vector<unsigned long> ret;
+
+	for( auto& vertex : vvertex )
+		vertex.copyToVector( ret );
+
+	return ret;
+}
+
+void MainOpenGL::DrawShape( GLenum &shape, std::vector< Vertex > &data )
+{
+	std::vector<unsigned long> VertexData = ShapeToArray( data );
+	glInterleavedArrays( GL_C4UB_V3F, 0, VertexData.data() );
+	glDrawArrays( shape, 0, data.size() );
 }

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "MainWindow.h"
+#include "Vertex.h"
 #include <gl/GL.h>
 #include <gl/GLU.h>
 
@@ -23,4 +24,7 @@ class MainOpenGL : public MainWindow {
 
 	  void checkController();
 	  void drawPrimitive();
+	  std::vector<unsigned long> ShapeToArray( std::vector<Vertex>& vvertex );
+	  void DrawShape( GLenum &shape, std::vector< Vertex > &data );
+
 };
