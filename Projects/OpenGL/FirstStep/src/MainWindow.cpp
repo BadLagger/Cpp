@@ -14,6 +14,7 @@ MainWindow::MainWindow( std::string name, HINSTANCE hInst )
 
 void MainWindow::setController( MainController& ctrl )
 {
+	Controller = ctrl;
 	wClass.lpfnWndProc = ctrl.callback;
 }
 

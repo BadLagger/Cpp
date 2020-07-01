@@ -15,7 +15,8 @@ class MainWindow{
 	  bool run();
 	  WPARAM exit();
   protected:
-	  HWND      g_hWnd;
+	  HWND            g_hWnd;
+	  MainController  Controller;
   private:
 	  MSG        uMsg;
 	  WNDCLASSEX wClass;

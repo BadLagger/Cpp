@@ -6,6 +6,8 @@ class MainController{
   public:
 	  MainController();
 	  static LRESULT CALLBACK callback(HWND hWnd, UINT msg, WPARAM wPrm, LPARAM lPrm);
+	  static WPARAM  getLastKeyDown();
   private:
-	  static void keyDownHndl(WPARAM key);
+	  static WPARAM LastKeyDown;
+	  static void   keyDownHndl(WPARAM key);
 };
