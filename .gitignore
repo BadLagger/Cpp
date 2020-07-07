@@ -3,4 +3,9 @@ Projects/OpenGL/FirstStep/Release
 Projects/OpenGL/FirstStep/.vs
 Projects/OpenGL/FirstStep/x64
 
+Projects/OpenGL/HelloVertexWithFreeGlut/Debug
+Projects/OpenGL/HelloVertexWithFreeGlut/Release
+Projects/OpenGL/HelloVertexWithFreeGlut/.vs
+Projects/OpenGL/HelloVertexWithFreeGlut/x64
+
 Projects/rsred2/rsred2.pro.user

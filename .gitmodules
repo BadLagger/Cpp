@@ -1,0 +1,3 @@
+[submodule "Projects/OpenGL/lib"]
+	path = Projects/OpenGL/lib
+	url = https://github.com/dcnieho/FreeGLUT.git
