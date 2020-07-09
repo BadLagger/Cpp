@@ -8,4 +8,9 @@ Projects/OpenGL/HelloVertexWithFreeGlut/Release
 Projects/OpenGL/HelloVertexWithFreeGlut/.vs
 Projects/OpenGL/HelloVertexWithFreeGlut/x64
 
-Projects/rsred2/rsred2.pro.user
+Projects/WinAPI/WFramework/Debug
+Projects/WinAPI/WFramework/Release
+Projects/WinAPI/WFramework/.vs
+
+Projects/build-rsred2-Desktop-Debug
+Projects/rsred2/rsred2.pro.*
