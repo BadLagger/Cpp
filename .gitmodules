@@ -1,3 +1,6 @@
 [submodule "Projects/OpenGL/lib"]
 	path = Projects/OpenGL/lib
 	url = https://github.com/dcnieho/FreeGLUT.git
+[submodule "Projects/OpenGL/glload"]
+	path = Projects/OpenGL/glload
+	url = https://github.com/arielm/glload.git

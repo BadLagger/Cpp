@@ -10,19 +10,19 @@ class MainWindow{
 	 // void setStyle( unsigned long style );
 	  void setIcon( unsigned long icon );
 	  void setTitle( std::string name );
-	  std::string getTitle();
+	  std::string getTitle() const;
 	  void setStyle( unsigned long winStyle);
-	  unsigned long getStyle();
+	  unsigned long getStyle() const;
 	  void setPosition( int x, int y );
 	  void setX( int x );
 	  void setY( int y );
-	  int  getX();
-	  int  getY();
+	  int  getX() const;
+	  int  getY() const;
 	  void setSize( int width, int height);
 	  void setWidth( int width );
-	  void setHeight( int width );
-	  int  getWidth();
-	  int  getHeight();
+	  void setHeight( int height );
+	  int  getWidth() const;
+	  int  getHeight() const;
 	  bool create( std::string title, unsigned long winStyle, int x, int y, int w, int h);
 	  bool create();
 	  void show( int cmd );
@@ -41,4 +41,7 @@ class MainWindow{
 	  int wWidth;
 	  int wHeight;
 	  bool created;
+
+	  bool setPos( int x, int y );
+	  bool setSi( int w, int h );
 };
